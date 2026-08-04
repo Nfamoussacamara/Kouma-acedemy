@@ -28,9 +28,9 @@ export function requireAdminOrOwner() {
       return next(new ForbiddenError('Utilisateur non connecté ou session invalide'));
     }
 
-     targetId = req.params.id;
+    const targetId = req.params.id;
     const isSelf = req.user.id === targetId;
-    const isAdmconstin = req.user.type === 'Admin';
+    const isAdmin = req.user.type === 'Admin';
 
     if (!isAdmin && !isSelf) {
       return next(new ForbiddenError("Vous n'êtes pas autorisé à modifier le profil d'un autre utilisateur"));
