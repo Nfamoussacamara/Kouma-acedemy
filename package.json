@@ -1,0 +1,51 @@
+{
+  "name": "kouma-academy-back",
+  "version": "1.0.0",
+  "description": "Backend API pour Kouma Academy (Architecture modulaire, Express, Argon2, Yup, Mongoose)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:prod": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "NODE_ENV=test node --test tests/",
+    "test:unit": "node --test tests/unit/",
+    "test:integration": "node --test tests/integration/",
+    "test:e2e": "node --test tests/e2e/",
+    "lint": "eslint src tests",
+    "seed:admin": "node src/shared/seeds/seedAdmin.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "express",
+    "nodejs",
+    "kouma-academy",
+    "modular-architecture"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "argon2": "^0.45.1",
+    "axios": "^1.16.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.6.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.9.3",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.14",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.1",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^10.8.0",
+    "mongodb-memory-server": "^10.1.2",
+    "supertest": "^7.0.0"
+  }
+}
