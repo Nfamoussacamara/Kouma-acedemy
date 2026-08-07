@@ -1,4 +1,4 @@
-import { NotFoundError, ConflictError } from '../../../shared/errors/AppError.js';
+import { NotFoundError, ConflictError, ValidationError } from '../../../shared/errors/AppError.js';
 import { FournisseurRepository } from '../repositories/fournisseur.repository.js';
 import { EquipementRepository } from '../../equipement/repositories/equipement.repository.js';
 import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
@@ -20,7 +20,7 @@ export class FournisseurService {
 
   static getFournisseurById = async (id) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     const fournisseur = await FournisseurRepository.findById(id);
     if (!fournisseur) {
@@ -35,7 +35,7 @@ export class FournisseurService {
 
   static updateFournisseur = async (id, dto) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     const updated = await FournisseurRepository.update(id, dto);
     if (!updated) {
@@ -46,7 +46,7 @@ export class FournisseurService {
 
   static deleteFournisseur = async (id) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     // 1. Vérifier si le fournisseur existe
     const fournisseur = await FournisseurRepository.findById(id);
@@ -68,7 +68,7 @@ export class FournisseurService {
 
   static recalculateMontant = async (fournisseurId) => {
     if (!isValidObjectId(fournisseurId)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     const sumResult = await EquipementRepository.sumPricesByProvider(fournisseurId);
     await FournisseurRepository.updateMontant(fournisseurId, sumResult);

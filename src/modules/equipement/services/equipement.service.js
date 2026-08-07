@@ -1,4 +1,4 @@
-import { NotFoundError } from '../../../shared/errors/AppError.js';
+import { NotFoundError, ValidationError } from '../../../shared/errors/AppError.js';
 import { EquipementRepository } from '../repositories/equipement.repository.js';
 import { FournisseurRepository } from '../../fournisseur/repositories/fournisseur.repository.js';
 import { FournisseurService } from '../../fournisseur/services/fournisseur.service.js';
@@ -26,7 +26,7 @@ export class EquipementService {
 
   static getEquipementById = async (id) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant équipement invalide");
+      throw new ValidationError("Identifiant équipement invalide");
     }
     const equipement = await EquipementRepository.findById(id);
     if (!equipement) {
@@ -37,7 +37,7 @@ export class EquipementService {
 
   static createEquipement = async (dto) => {
     if (dto.fournisseur && !isValidObjectId(dto.fournisseur)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     // 1. Vérifier si le fournisseur associé existe
     const fournisseur = await FournisseurRepository.findById(dto.fournisseur);
@@ -56,10 +56,10 @@ export class EquipementService {
 
   static updateEquipement = async (id, dto) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant équipement invalide");
+      throw new ValidationError("Identifiant équipement invalide");
     }
     if (dto.fournisseur && !isValidObjectId(dto.fournisseur)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     // 1. Récupérer l'équipement existant
     const existing = await EquipementRepository.findById(id);
@@ -101,7 +101,7 @@ export class EquipementService {
 
   static deleteEquipement = async (id) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant équipement invalide");
+      throw new ValidationError("Identifiant équipement invalide");
     }
     // 1. Récupérer l'équipement existant
     const existing = await EquipementRepository.findById(id);

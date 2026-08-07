@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { validateBody, validateQuery } from '../../../middlewares/validate.middleware.js';
 import { authMiddleware } from '../../../middlewares/auth.middleware.js';
 import { requireRole, requireAdminOrOwner } from '../../../middlewares/role.middleware.js';
-import { asyncHandler } from '../../../shared/errors/asyncHandler.js';
 import { UserController } from '../controllers/user.controller.js';
 import { paginationQuerySchema } from '../../../validators/common.validator.js';
 import {
