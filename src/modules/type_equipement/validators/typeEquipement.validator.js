@@ -1,7 +1,7 @@
 import * as yup from "yup";
 
 export const createTypeEquipementSchema = yup.object({
-  name: yup
+  nom: yup
     .string()
     .min(2, "Le nom doit contenir au moins 2 caracteres")
     .required("Le nom est requis"),
@@ -13,7 +13,7 @@ export const createTypeEquipementSchema = yup.object({
 });
 
 export const updateTypeEquipementSchema = yup.object({
-  name: yup
+  nom: yup
     .string()
     .min(2, "Le nom doit contenir au moins 2 caracteres")
     .required("Le nom est requis"),

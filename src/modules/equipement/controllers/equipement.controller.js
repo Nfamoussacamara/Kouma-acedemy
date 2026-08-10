@@ -22,8 +22,14 @@ export class EquipementController {
     res.json({ success: true, data });
   });
 
+
+  static toggleStatus = asyncHandler(async (req, res) => {
+    await EquipementService.toggleEquipementStatus(req.params.id, req.body);
+    res.json({ success: true, message: "Statut de l'équipement mis à jour avec succès" });
+  });
+
   static delete = asyncHandler(async (req, res) => {
     await EquipementService.deleteEquipement(req.params.id);
     res.status(204).send();
-  }) ;
+  });
 }

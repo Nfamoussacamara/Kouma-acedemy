@@ -1,24 +1,22 @@
-export const equipementPaths = {
-  '/equipements': {
+export const typeEquipementPaths = {
+  '/type-equipements': {
     get: {
-      tags: ['Equipements'],
-      summary: 'Lister les équipements',
+      tags: ['Type Equipements'],
+      summary: 'Lister les types d\'équipements',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
-        { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
-        { name: 'type', in: 'query', schema: { type: 'string', description: 'Filtrer par type' } },
-        { name: 'fournisseur', in: 'query', schema: { type: 'string', description: 'Filtrer par fournisseur' } },
-        { name: 'search', in: 'query', schema: { type: 'string', description: 'Recherche globale' } },
+        { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+        { name: 'search', in: 'query', schema: { type: 'string', description: 'Recherche par nom ou description' } },
         { name: 'status', in: 'query', schema: { type: 'string', enum: ['active', 'inactive'] } },
       ],
       responses: {
-        200: { description: 'Liste des équipements' }
+        200: { description: 'Liste des types d\'équipements' }
       }
     },
     post: {
-      tags: ['Equipements'],
-      summary: 'Ajouter un nouvel équipement (Admin)',
+      tags: ['Type Equipements'],
+      summary: 'Ajouter un nouveau type d\'équipement (Admin)',
       security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,
@@ -26,39 +24,36 @@ export const equipementPaths = {
           'application/json': {
              schema: {
                type: 'object',
-               required: ['designation', 'type', 'fournisseur', 'prix'],
+               required: ['name', 'description'],
                properties: {
-                 designation: { type: 'string' },
-                 type: { type: 'string' },
-                 fournisseur: { type: 'string', description: 'ID du fournisseur' },
-                 caracteristique: { type: 'string' },
-                 prix: { type: 'number' },
+                 name: { type: 'string' },
+                 description: { type: 'string' }
                }
              }
           }
         }
       },
       responses: {
-        201: { description: 'Equipement créé' }
+        201: { description: 'Type d\'équipement créé' }
       }
     }
   },
-  '/equipements/{id}': {
+  '/type-equipements/{id}': {
     get: {
-      tags: ['Equipements'],
-      summary: 'Obtenir les détails d\'un équipement',
+      tags: ['Type Equipements'],
+      summary: 'Obtenir les détails d\'un type d\'équipement',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
       ],
       responses: {
-        200: { description: 'Détails de l\'équipement' },
-        404: { description: 'Equipement non trouvé' }
+        200: { description: 'Détails du type d\'équipement' },
+        404: { description: 'Type d\'équipement non trouvé' }
       }
     },
     patch: {
-      tags: ['Equipements'],
-      summary: 'Modifier un équipement (Admin)',
+      tags: ['Type Equipements'],
+      summary: 'Modifier un type d\'équipement (Admin)',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
@@ -70,36 +65,33 @@ export const equipementPaths = {
              schema: {
                type: 'object',
                properties: {
-                 designation: { type: 'string' },
-                 type: { type: 'string' },
-                 fournisseur: { type: 'string' },
-                 caracteristique: { type: 'string' },
-                 prix: { type: 'number' },
+                 name: { type: 'string' },
+                 description: { type: 'string' }
                }
              }
           }
         }
       },
       responses: {
-        200: { description: 'Equipement mis à jour' }
+        200: { description: 'Type d\'équipement mis à jour' }
       }
     },
     delete: {
-      tags: ['Equipements'],
-      summary: 'Supprimer un équipement (Admin)',
+      tags: ['Type Equipements'],
+      summary: 'Supprimer un type d\'équipement (Admin)',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
       ],
       responses: {
-        204: { description: 'Equipement supprimé' }
+        200: { description: 'Type d\'équipement supprimé' }
       }
     }
   },
-  '/equipements/{id}/status': {
+  '/type-equipements/{id}/status': {
     patch: {
-      tags: ['Equipements'],
-      summary: 'Activer / Désactiver un équipement (Admin)',
+      tags: ['Type Equipements'],
+      summary: 'Activer / Désactiver un type d\'équipement (Admin)',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } }

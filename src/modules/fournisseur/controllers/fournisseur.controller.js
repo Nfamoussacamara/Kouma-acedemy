@@ -1,5 +1,5 @@
-import { FournisseurService } from '../services/fournisseur.service.js';
-import { asyncHandler } from '../../../shared/errors/asyncHandler.js';
+import { FournisseurService } from "../services/fournisseur.service.js";
+import { asyncHandler } from "../../../shared/errors/asyncHandler.js";
 
 export class FournisseurController {
   static list = asyncHandler(async (req, res) => {
@@ -18,12 +18,23 @@ export class FournisseurController {
   });
 
   static update = asyncHandler(async (req, res) => {
-    const data = await FournisseurService.updateFournisseur(req.params.id, req.body);
+    const data = await FournisseurService.updateFournisseur(
+      req.params.id,
+      req.body,
+    );
     res.json({ success: true, data });
   });
 
   static delete = asyncHandler(async (req, res) => {
     await FournisseurService.deleteFournisseur(req.params.id);
-    res.status(204).send();
+    res.json({ success: true, message: "Fournisseur supprimé avec succès" });
+  });
+
+  static toggleStatus = asyncHandler(async (req, res) => {
+    await FournisseurService.toggleFournisseurStatus(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: "Statut du fournisseur mis à jour avec succès",
+    });
   });
 }

@@ -1,6 +1,6 @@
 import { TypeEquipementService } from "../services/typeEquipement.service.js";
 import { asyncHandler } from "../../../shared/errors/asyncHandler.js";
-import { sendSuccess } from "../../../shared/utils/sendsucces.js";
+import sendSuccess from "../../../shared/utils/sendsucces.js";
 
 export class TypeEquipementController {
     static listTypeEquipements = asyncHandler(async (req, res, next) => {
@@ -15,7 +15,7 @@ export class TypeEquipementController {
 
     static createTypeEquipement = asyncHandler(async (req, res, next) => {
         const result = await TypeEquipementService.createTypeEquipement(req.body);
-        return sendSuccess(res, result, "Type d'equipement créé avec succès");
+        return sendSuccess(res, {data : result}, "Type d'equipement créé avec succès");
     });
 
     static updateTypeEquipement = asyncHandler(async (req, res, next) => {
@@ -25,7 +25,7 @@ export class TypeEquipementController {
 
     static deleteTypeEquipement = asyncHandler(async (req, res, next) => {
         const result = await TypeEquipementService.deleteTypeEquipement(req.params.id);
-        return sendSuccess(res, result, "Type d'equipement supprimé avec succès");
+        return sendSuccess(res,{},"Type d'equipement supprimé avec succès");
     });
 
     static toggleStatus = asyncHandler(async (req, res, next) => {

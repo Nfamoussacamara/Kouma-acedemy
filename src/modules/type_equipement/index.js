@@ -1,12 +1,12 @@
-import { TypeEquipementRepository } from './repositories/typeEquipement.repository.js';
+import typeEquipementRepository from './repositories/typeEquiment.repository.js';
 import { TypeEquipementService } from './services/typeEquipement.service.js';
-import { TypeEquipementController } from './controllers/typeEquipement.controller.js';
-import { createTypeEquipementRoutes } from './routes/typeEquipement.routes.js';
+import { TypeEquipementController } from './controllers/TypeEquiment.controller.js';
+import { createTypeEquipementRoutes } from './routes/typeEquipement.route.js';
 
 import { Router } from 'express';
 
 /**
- * Composition root — module utilisateurs.
+ * Composition root — module type-equipement.
  */
 export function createTypeEquipementModule() {
   new TypeEquipementController();
@@ -18,7 +18,7 @@ export function createTypeEquipementModule() {
     name: 'type-equipement',
     basePath: '/',
     routes: mainRouter,
-    typeEquipementRepository: TypeEquipementRepository,
+    typeEquipementRepository: typeEquipementRepository,
     typeEquipementServices: {
       TypeEquipementService,
     }

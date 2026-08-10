@@ -19,13 +19,13 @@ export default class typeEquipementRepository {
   };
 
   static getTypeEquipementById = async (id) => {
-    const equipement = await typeEquipementModel.findById(id);
+    const equipement = await typeEquipementModel.findOne({ _id: id, deletedAt: null });
     return equipement ? equipement : null;
   };
 
   static updateTypeEquipement = async (id, payload) => {
-    const equipement = await typeEquipementModel.findByIdAndUpdate(
-      id,
+    const equipement = await typeEquipementModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
       payload,
       { new: true },
     );
@@ -35,7 +35,7 @@ export default class typeEquipementRepository {
   static deleteTypeEquipement = async (id) => {
     const result = await typeEquipementModel.updateOne(
       { _id: id, isActive: true },
-      { isActive: false },
+      { isActive: false , deletedAt : new Date()},
     );
 
     return result.modifiedCount > 0; 

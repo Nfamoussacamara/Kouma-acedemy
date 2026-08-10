@@ -3,19 +3,37 @@ import { EquipementRepository } from '../repositories/equipement.repository.js';
 import { FournisseurRepository } from '../../fournisseur/repositories/fournisseur.repository.js';
 import { FournisseurService } from '../../fournisseur/services/fournisseur.service.js';
 import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
+import { getPagination } from '../../../shared/utils/pagination.util.js';
+import { createSearchFilter } from '../../../shared/utils/search.util.js';
 
 export class EquipementService {
   static listEquipements = async (query = {}) => {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 20;
-    
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = getPagination(query);
+    const searchFilter = createSearchFilter(query.search, ['designation', 'caracteristique']);
+    const filter = { ...searchFilter };
 
-    const [documents, total] = await EquipementRepository.findAll({ 
+    if (query.status === 'active') {
+      filter.isActive = true;
+    } else if (query.status === 'inactive') {
+      filter.isActive = false;
+    }
+
+    if (query.type) {
+      filter.type = query.type;
+    }
+
+    if (query.fournisseur) {
+      filter.fournisseur = query.fournisseur;
+    }
+
+    filter.deletedAt = null;
+
+    const [documents, total] = await EquipementRepository.getAllEquipement({ 
       skip, 
       limit,
       type: query.type,
       fournisseur: query.fournisseur,
+      filter
     });
 
     return {
@@ -28,7 +46,7 @@ export class EquipementService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant équipement invalide");
     }
-    const equipement = await EquipementRepository.findById(id);
+    const equipement = await EquipementRepository.getEquipementById(id);
     if (!equipement) {
       throw new NotFoundError(`Équipement ${id} non trouvé`);
     }
@@ -39,16 +57,13 @@ export class EquipementService {
     if (dto.fournisseur && !isValidObjectId(dto.fournisseur)) {
       throw new ValidationError("Identifiant fournisseur invalide");
     }
-    // 1. Vérifier si le fournisseur associé existe
-    const fournisseur = await FournisseurRepository.findById(dto.fournisseur);
+    const fournisseur = await FournisseurRepository.getFournisseurById(dto.fournisseur);
     if (!fournisseur) {
       throw new NotFoundError(`Le fournisseur ${dto.fournisseur} n'existe pas`);
     }
 
-    // 2. Créer l'équipement
-    const equipement = await EquipementRepository.create(dto);
+    const equipement = await EquipementRepository.createEquipement(dto);
 
-    // 3. Déclencher le recalcul automatique du montant du fournisseur
     await FournisseurService.recalculateMontant(dto.fournisseur);
 
     return equipement;
@@ -61,29 +76,24 @@ export class EquipementService {
     if (dto.fournisseur && !isValidObjectId(dto.fournisseur)) {
       throw new ValidationError("Identifiant fournisseur invalide");
     }
-    // 1. Récupérer l'équipement existant
-    const existing = await EquipementRepository.findById(id);
-    if (!existing) {
+
+    const equipement = await EquipementRepository.getEquipementById(id);
+    if (!equipement) {
       throw new NotFoundError(`Équipement ${id} non trouvé`);
     }
 
-    // On extrait l'ID brut du fournisseur lié initialement
-    const oldFournisseurId = existing.fournisseur?.id;
+    const oldFournisseurId = equipement.fournisseur?.id;
 
-    // 2. Si le fournisseur est modifié, vérifier qu'il existe
     if (dto.fournisseur && dto.fournisseur !== oldFournisseurId) {
-      const newFournisseur = await FournisseurRepository.findById(dto.fournisseur);
+      const newFournisseur = await FournisseurRepository.getFournisseurById(dto.fournisseur);
       if (!newFournisseur) {
         throw new NotFoundError(`Le nouveau fournisseur ${dto.fournisseur} n'existe pas`);
       }
     }
 
-    // 3. Mettre à jour l'équipement
-    const updated = await EquipementRepository.update(id, dto);
+    const updated = await EquipementRepository.updateEquipement(id, dto);
 
-    // 4. Recalculer le montant fournisseur
     if (dto.fournisseur && dto.fournisseur !== oldFournisseurId) {
-      // Recalculer pour l'ancien ET le nouveau fournisseur si transfert
       if (oldFournisseurId) {
         await FournisseurService.recalculateMontant(oldFournisseurId);
       }
@@ -103,23 +113,34 @@ export class EquipementService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant équipement invalide");
     }
-    // 1. Récupérer l'équipement existant
-    const existing = await EquipementRepository.findById(id);
+    const existing = await EquipementRepository.getEquipementById(id);
     if (!existing) {
       throw new NotFoundError(`Équipement ${id} non trouvé`);
     }
 
     const fournisseurId = existing.fournisseur?.id;
 
-    // 2. Supprimer logiquement (isActive: false)
     const success = await EquipementRepository.deleteLogically(id);
     if (!success) {
       throw new NotFoundError(`Équipement ${id} non trouvé ou déjà supprimé`);
     }
 
-    // 3. Recalculer le montant de son fournisseur
     if (fournisseurId) {
       await FournisseurService.recalculateMontant(fournisseurId);
     }
+  };
+
+  static toggleEquipementStatus = async (id, { isActive }) => {
+    if(!isValidObjectId(id)){
+      throw new ValidationError("Identifiant équipement non valide");
+    }
+
+    const existing = await EquipementRepository.getEquipementById(id);
+    if (!existing){
+      throw new NotFoundError(`Équipement ${id} non trouvé`);
+    }
+
+    const updated = await EquipementRepository.updateStatus(id, isActive);
+    return updated;
   };
 }

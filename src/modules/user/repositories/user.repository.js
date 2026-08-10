@@ -13,12 +13,12 @@ export class UserRepository {
   };
 
   static findById = async (id) => {
-    const document = await UserModel.findById(id);
+    const document = await UserModel.findOne({ _id: id, deletedAt: null });
     return document ? document : null;
   };
 
   static findByIdWithPassword = async (id) => {
-    const document = await UserModel.findById(id).select("+password");
+    const document = await UserModel.findOne({ _id: id, deletedAt: null }).select("+password");
     return document ? document : null;
   };
 
@@ -50,7 +50,7 @@ export class UserRepository {
   };
 
   static update = async (id, payload) => {
-    const document = await UserModel.findByIdAndUpdate(id, payload, {
+    const document = await UserModel.findOneAndUpdate({ _id: id, deletedAt: null }, payload, {
       new: true,
       runValidators: true,
     });
@@ -61,7 +61,7 @@ export class UserRepository {
   static deleteLogically = async (id) => {
     const result = await UserModel.updateOne(
       { _id: id, isActive: true },
-      { isActive: false },
+      { isActive: false, deletedAt: new Date() },
     );
 
     return result.modifiedCount > 0;

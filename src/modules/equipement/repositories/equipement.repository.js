@@ -1,22 +1,11 @@
-import { mongoose } from '../../../infrastructure/database/mongoose.js';
-import { EquipementModel } from '../infrastructure/persistence/models/Equipement.model.js';
+import { mongoose } from "../../../infrastructure/database/mongoose.js";
+import { EquipementModel } from "../infrastructure/persistence/models/Equipement.model.js";
 
 export class EquipementRepository {
-  static findAll = async ({ type, fournisseur, skip, limit }) => {
-    // Toujours filtrer pour ne renvoyer que les équipements actifs (non supprimés logiquement)
-    const filter = { isActive: true };
-
-    if (type) {
-      filter.type = type;
-    }
-
-    if (fournisseur) {
-      filter.fournisseur = fournisseur;
-    }
-
+  static getAllEquipement = async ({ skip, limit, filter = {} }) => {
     return Promise.all([
       EquipementModel.find(filter)
-        .populate('fournisseur')
+        .populate("fournisseur")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -24,16 +13,15 @@ export class EquipementRepository {
     ]);
   };
 
-  static findById = async (id) => {
-
-    const document = await EquipementModel.findOne({ _id: id, isActive: true })
-      .populate('fournisseur')
-      ;
-
-    return document 
+  static getEquipementById = async (id) => {
+    const document = await EquipementModel.findOne({
+      _id: id,
+      deletedAt: null,
+    }).populate("fournisseur");
+    return document;
   };
 
-  static create = async (dto) => {
+  static createEquipement = async (dto) => {
     const document = await EquipementModel.create({
       designation: dto.designation,
       type: dto.type,
@@ -43,70 +31,72 @@ export class EquipementRepository {
       isActive: true,
     });
     // On peuple le fournisseur pour renvoyer un objet complet
-    const populated = await document.populate('fournisseur');
+    const populated = await document.populate("fournisseur");
     return populated;
   };
 
-  static update = async (id, dto) => {
-
+  static updateEquipement = async (id, dto) => {
     const payload = Object.fromEntries(
       Object.entries({
-        designation: dto.designation,
+        designation: dto.designation, 
         type: dto.type,
         fournisseur: dto.fournisseur,
         caracteristique: dto.caracteristique,
         prix: dto.prix,
-      }).filter(([, value]) => value !== undefined)
+      }).filter(([, value]) => value !== undefined),
     );
 
     if (Object.keys(payload).length === 0) {
-      return EquipementRepository.findById(id);
+      return EquipementRepository.getEquipementById(id);
     }
 
     const document = await EquipementModel.findOneAndUpdate(
-      { _id: id, isActive: true },
+      { _id: id, deletedAt: null },
       payload,
-      { returnDocument: 'after' }
-    )
-      .populate('fournisseur')
-      ;
-
-    return document 
+      { returnDocument: "after" },
+    ).populate("fournisseur");
+    return document;
   };
 
   static deleteLogically = async (id) => {
-
     const result = await EquipementModel.updateOne(
-      { _id: id, isActive: true },
-      { isActive: false }
+      { _id: id, deletedAt: null },
+      { isActive: false, deletedAt: new Date() },
     );
 
     return result.modifiedCount > 0;
   };
 
   static countActiveByProvider = async (fournisseurId) => {
-
-    return EquipementModel.countDocuments({ fournisseur: fournisseurId, isActive: true });
+    return EquipementModel.countDocuments({
+      fournisseur: fournisseurId,
+      isActive: true,
+      deletedAt: null,
+    });
   };
 
   static sumPricesByProvider = async (fournisseurId) => {
-
-
     const result = await EquipementModel.aggregate([
       {
         $match: {
           fournisseur: new mongoose.Types.ObjectId(fournisseurId),
           isActive: true,
+          deletedAt: null,
         },
       },
       {
         $group: {
           _id: null,
-          total: { $sum: '$prix' },
+          total: { $sum: "$prix" },
         },
       },
     ]);
 
     return result.length > 0 ? result[0].total : 0;
+  };
+
+  static updateStatus = async (id, isActive) => {
+    const result = await EquipementModel.updateOne({ _id: id }, { isActive });
+    return result.modifiedCount > 0;
   };
 }

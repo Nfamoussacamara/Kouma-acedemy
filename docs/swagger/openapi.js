@@ -2,6 +2,7 @@ import { authPaths } from '../paths/auth.docs.js';
 import { userPaths } from '../paths/user.docs.js';
 import { fournisseurPaths } from '../paths/fournisseur.docs.js';
 import { equipementPaths } from '../paths/equipement.docs.js';
+import { typeEquipementPaths } from '../paths/typeEquipement.docs.js';
 
 export const openApiSpec = {
   openapi: '3.0.3',
@@ -18,7 +19,8 @@ export const openApiSpec = {
     ...authPaths,
     ...userPaths,
     ...fournisseurPaths,
-    ...equipementPaths
+    ...equipementPaths,
+    ...typeEquipementPaths
   },
   components: {
     securitySchemes: {

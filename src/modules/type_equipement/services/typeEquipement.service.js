@@ -2,10 +2,10 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/AppError.js";
-import { typeEquipementRepository } from "../repositories/typeEquipement.repository.js";
 import { isValidObjectId } from "../../../infrastructure/database/mongoose.js";
 import { getPagination } from "../../../shared/utils/pagination.util.js";
 import { createSearchFilter } from "../../../shared/utils/search.util.js";
+import typeEquipementRepository from "../repositories/typeEquiment.repository.js";
 
 export class TypeEquipementService {
   static listTypeEquipements = async (query = {}) => {
@@ -24,6 +24,8 @@ export class TypeEquipementService {
       filter.isActive = false;
     }
 
+    filter.deletedAt = null;
+
     const [documents, total] = await typeEquipementRepository.findAll({
       skip,
       limit,
@@ -40,7 +42,7 @@ export class TypeEquipementService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant du type d'équipement invalide");
     }
-    const equipement = await typeEquipementRepository.findById(id);
+    const equipement = await typeEquipementRepository.getTypeEquipementById(id);
     if (!equipement) {
       throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
     }
@@ -48,7 +50,7 @@ export class TypeEquipementService {
   };
 
   static createTypeEquipement = async (dto) => {
-    const equipement = await typeEquipementRepository.create(dto);
+    const equipement = await typeEquipementRepository.createTypeEquipement(dto);
     return equipement;
   };
 
@@ -56,12 +58,12 @@ export class TypeEquipementService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant équipement invalide");
     }
-    const existing = await typeEquipementRepository.findById(id);
+    const existing = await typeEquipementRepository.getTypeEquipementById(id);
     if (!existing) {
       throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
     }
 
-    const updated = await typeEquipementRepository.update(id, dto);
+    const updated = await typeEquipementRepository.updateTypeEquipement(id, dto);
     return updated;
   };
 
@@ -70,10 +72,10 @@ export class TypeEquipementService {
       throw new ValidationError("Identifiant du type d'équipement invalide");
     }
 
-    const typeEquipement = await typeEquipementRepository.findById(id);
+    const typeEquipement = await typeEquipementRepository.getTypeEquipementById(id);
 
     if (typeEquipement) {
-      const equipementCount = await equipementRepository.countByTypeId(id);
+      const equipementCount = await typeEquipementRepository.getTypeEquipementById(id);
       if (equipementCount > 0) {
         throw new ConflictError(
           `Impossible de supprimer ce type d'équipement car il est déjà lié à ${equipementCount} équipements`,
@@ -84,7 +86,7 @@ export class TypeEquipementService {
       throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
     }
 
-    const success = await typeEquipementRepository.deleteLogically(id);
+    const success = await typeEquipementRepository.deleteTypeEquipement(id);
     if (!success) {
       throw new NotFoundError(
         `Type d'équipement ${id} non trouvé ou déjà supprimé`,
@@ -97,7 +99,7 @@ export class TypeEquipementService {
       if (!isValidObjectId(id)) {
         throw new ValidationError("Identifiant du type d'équipement invalide");
       }
-      const updated = await typeEquipementRepository.update(id, { isActive });
+      const updated = await typeEquipementRepository.updateStatus(id, { isActive });
       if (!updated) {
         throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
       }

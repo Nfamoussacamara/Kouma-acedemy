@@ -1,4 +1,5 @@
-import { mongoose } from '../../../../../infrastructure/database/mongoose.js';
+import { mongoose } from "../../../../../infrastructure/database/mongoose.js";
+
 
 export const equipementSchema = new mongoose.Schema(
   {
@@ -6,8 +7,8 @@ export const equipementSchema = new mongoose.Schema(
       type: String
     },
     type: {
-      type: String,
-
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TypeEquipement',
     },
     fournisseur: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,6 +23,10 @@ export const equipementSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   {

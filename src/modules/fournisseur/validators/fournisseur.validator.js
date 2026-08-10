@@ -23,3 +23,9 @@ export const updateFournisseurSchema = yup.object({
     .string()
     .nullable(),
 });
+
+export const toggleStatusSchema = yup.object({
+  isActive: yup
+  .boolean()
+  .required("Le statut (isActive) est requis"),
+});

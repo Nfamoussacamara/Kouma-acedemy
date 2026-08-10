@@ -25,6 +25,8 @@ export class UserService {
       filter.isActive = false;
     }
 
+    filter.deletedAt = null;
+
     const [documents, total] = await UserRepository.findAll({
       skip,
       limit,

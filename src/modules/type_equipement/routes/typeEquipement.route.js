@@ -5,11 +5,8 @@ import {
   validateParams,
 } from "../../../middlewares/validate.middleware.js";
 import { authMiddleware } from "../../../middlewares/auth.middleware.js";
-import {
-  requireRole,
-  requireAdminOrOwner,
-} from "../../../middlewares/role.middleware.js";
-import { TypeEquipementController } from "../controllers/typeEquipement.controller.js";
+import { requireRole } from "../../../middlewares/role.middleware.js";
+import { TypeEquipementController } from "../controllers/TypeEquiment.controller.js";
 import {
   updateTypeEquipementSchema,
   createTypeEquipementSchema,

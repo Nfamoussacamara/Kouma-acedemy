@@ -7,6 +7,8 @@ export const userPaths = {
       parameters: [
         { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
         { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
+        { name: 'search', in: 'query', schema: { type: 'string', description: 'Recherche par nom, prénom, email, tel' } },
+        { name: 'status', in: 'query', schema: { type: 'string', enum: ['active', 'inactive'] } },
       ],  
       responses: { 
         200: { description: 'Liste des utilisateurs' },

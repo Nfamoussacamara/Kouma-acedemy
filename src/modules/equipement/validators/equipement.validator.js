@@ -3,8 +3,14 @@ import * as yup from "yup";
 const objectIdRegex = /^[a-f\d]{24}$/i;
 
 export const createEquipementSchema = yup.object({
-  designation: yup.string().trim().required("La désignation est requise"),
-  type: yup.string().trim().required("Le type d'équipement est requis"),
+  designation: yup
+    .string()
+    .trim()
+    .required("La désignation est requise"),
+  type: yup
+    .string()
+    .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
+    .required("Le type d'équipement est requis"),
   fournisseur: yup
     .string()
     .matches(
@@ -22,7 +28,9 @@ export const createEquipementSchema = yup.object({
 
 export const updateEquipementSchema = yup.object({
   designation: yup.string().trim(),
-  type: yup.string().trim(),
+  type: yup
+    .string()
+    .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide"),
   fournisseur: yup
     .string()
     .matches(
@@ -37,11 +45,32 @@ export const updateEquipementSchema = yup.object({
 });
 
 export const listEquipementsQuerySchema = yup.object({
-  search: yup.string().trim(), 
-  type: yup.string().trim(),
+  search: yup.string().trim(),
+  type: yup
+    .string()
+    .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide"),
   fournisseur: yup
     .string()
     .matches(objectIdRegex, "Format d'identifiant de fournisseur invalide"),
-  page: yup.number().integer().min(1).default(1),
-  limit: yup.number().integer().min(1).max(100).default(20),
+  status: yup
+    .string()
+    .oneOf(['active', 'inactive'], "Le statut doit être 'active' ou 'inactive'"),
+  page: yup
+    .number()
+    .integer()
+    .min(1)
+    .default(1),
+  limit: yup
+    .number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(20),
 });
+
+export const toggleStatusSchema = yup.object({
+      isActive: yup
+        .boolean()
+        .required('Le champ isActive est requis'),
+    });
+    

@@ -2,12 +2,14 @@ import { Router } from 'express';
 import { createUserModule } from '../modules/user/index.js';
 import { createFournisseurModule } from '../modules/fournisseur/index.js';
 import { createEquipementModule } from '../modules/equipement/index.js';
+import { createTypeEquipementModule } from '../modules/type_equipement/index.js';
 
 export function registerRoutes(apiRouter) {
   const modules = [
     createUserModule(),
     createFournisseurModule(),
     createEquipementModule(),
+    createTypeEquipementModule(),
   ];
 
   for (const mod of modules) {
