@@ -3,6 +3,7 @@ import { FournisseurRepository } from '../repositories/fournisseur.repository.js
 import { EquipementRepository } from '../../equipement/repositories/equipement.repository.js';
 import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
 import { createSearchFilter } from '../../../shared/utils/search.util.js';
+import { removeUndefinedValues } from '../../../shared/utils/payload.util.js';
 
 export class FournisseurService {
   static listFournisseurs = async (query = {}) => {
@@ -52,7 +53,18 @@ export class FournisseurService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant fournisseur invalide");
     }
-    const updated = await FournisseurRepository.updateFournisseur(id, dto);
+
+    const payload = removeUndefinedValues({
+      nom: dto.nom,
+      contact: dto.contact,
+      adresse: dto.adresse,
+    });
+
+    if (Object.keys(payload).length === 0) {
+      return FournisseurService.getFournisseurById(id);
+    }
+
+    const updated = await FournisseurRepository.updateFournisseur(id, payload);
     if (!updated) {
       throw new NotFoundError(`Fournisseur ${id} non trouvé`);
     }

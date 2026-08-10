@@ -34,7 +34,7 @@ export default class typeEquipementRepository {
 
   static deleteTypeEquipement = async (id) => {
     const result = await typeEquipementModel.updateOne(
-      { _id: id, isActive: true },
+      { _id: id, deletedAt: null },
       { isActive: false , deletedAt : new Date()},
     );
 

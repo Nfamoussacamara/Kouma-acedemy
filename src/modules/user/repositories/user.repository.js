@@ -12,31 +12,31 @@ export class UserRepository {
     ]);
   };
 
-  static findById = async (id) => {
+  static getUserById = async (id) => {
     const document = await UserModel.findOne({ _id: id, deletedAt: null });
     return document ? document : null;
   };
 
-  static findByIdWithPassword = async (id) => {
+  static getUserByIdWithPassword = async (id) => {
     const document = await UserModel.findOne({ _id: id, deletedAt: null }).select("+password");
     return document ? document : null;
   };
 
-  static findByUsername = async (username) => {
+  static getUserByUsername = async (username) => {
     const document = await UserModel.findOne({
       username: username.toLowerCase().trim(),
     });
     return document ? document : null;
   };
 
-  static findByUsernameWithPassword = async (username) => {
+  static getUserByUsernameWithPassword = async (username) => {
     const document = await UserModel.findOne({
       username: username.toLowerCase().trim(),
     }).select("+password");
     return document ? document : null;
   };
 
-  static create = async (dto) => {
+  static createUser = async (dto) => {
     const document = await UserModel.create({
       username: dto.username.toLowerCase().trim(),
       password: dto.password,
@@ -49,7 +49,7 @@ export class UserRepository {
     return document;
   };
 
-  static update = async (id, payload) => {
+  static updateUser = async (id, payload) => {
     const document = await UserModel.findOneAndUpdate({ _id: id, deletedAt: null }, payload, {
       new: true,
       runValidators: true,
@@ -60,10 +60,18 @@ export class UserRepository {
 
   static deleteLogically = async (id) => {
     const result = await UserModel.updateOne(
-      { _id: id, isActive: true },
+      { _id: id, deletedAt: null },
       { isActive: false, deletedAt: new Date() },
     );
 
     return result.modifiedCount > 0;
   };
+
+  static findUserByPhone = async (phone) => {
+    const document = await UserModel.findOne({
+      tel: phone
+    });
+    return document ? document : null;
+  };
+
 }
