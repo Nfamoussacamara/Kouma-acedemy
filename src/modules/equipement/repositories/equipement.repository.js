@@ -35,17 +35,7 @@ export class EquipementRepository {
     return populated;
   };
 
-  static updateEquipement = async (id, dto) => {
-    const payload = Object.fromEntries(
-      Object.entries({
-        designation: dto.designation, 
-        type: dto.type,
-        fournisseur: dto.fournisseur,
-        caracteristique: dto.caracteristique,
-        prix: dto.prix,
-      }).filter(([, value]) => value !== undefined),
-    );
-
+  static updateEquipement = async (id, payload) => {
     if (Object.keys(payload).length === 0) {
       return EquipementRepository.getEquipementById(id);
     }

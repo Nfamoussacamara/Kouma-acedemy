@@ -9,6 +9,8 @@ import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { getPagination } from '../../../shared/utils/pagination.util.js';
 import { createSearchFilter } from '../../../shared/utils/search.util.js';
+import { formatPhoneNumber } from '../../../shared/utils/phone.util.js';
+import { removeUndefinedValues } from '../../../shared/utils/payload.util.js';
 
 const isDuplicateKeyError = (error) => error?.code === 11000;
 
@@ -43,7 +45,7 @@ export class UserService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
-    const user = await UserRepository.findById(id);
+    const user = await UserRepository.getUserById(id);
     if (!user) {
       throw new NotFoundError(`Utilisateur ${id} non trouvé`);
     }
@@ -51,14 +53,26 @@ export class UserService {
   };
 
   static createUser = async (dto) => {
+
+    const user = await UserRepository.getUserByUsername(dto.username);
+    if (user) {
+      throw new ConflictError("Ce nom d'utilisateur est déjà utilisé");
+    }
+
+    const phone = formatPhoneNumber(dto.tel);
+    const existingUser = await UserRepository.findUserByPhone(phone);
+    if (existingUser) {
+      throw new ConflictError("Ce numéro de téléphone est déjà utilisé");
+    }
+
     try {
       const hashedPassword = await argon2.hash(dto.password);
-      return await UserRepository.create({
+      return await UserRepository.createUser({
         username: dto.username,
         password: hashedPassword,
         nom: dto.nom,
         prenom: dto.prenom,
-        tel: dto.tel,
+        tel: phone,
         type: dto.type,
       });
     } catch (error) {
@@ -73,18 +87,25 @@ export class UserService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
+    
+    if (dto.tel) {
+      const phone = formatPhoneNumber(dto.tel);
+      const existingUser = await UserRepository.findUserByPhone(phone);
+      if (existingUser && existingUser._id.toString() !== id) {
+        throw new ConflictError("Ce numéro de téléphone est déjà utilisé par un autre compte !");
+      }
+    }
+
     try {
-      const payload = Object.fromEntries(
-        Object.entries({
-          username: dto.username,
-          password: dto.password,
-          nom: dto.nom,
-          prenom: dto.prenom,
-          tel: dto.tel,
-          type: dto.type,
-          isActive: dto.isActive,
-        }).filter(([, value]) => value !== undefined),
-      );
+      const payload = removeUndefinedValues({
+        username: dto.username,
+        password: dto.password,
+        nom: dto.nom,
+        prenom: dto.prenom,
+        tel: dto.tel ? formatPhoneNumber(dto.tel) : undefined,
+        type: dto.type,
+        isActive: dto.isActive,
+      });
 
       if (Object.keys(payload).length === 0) {
         return UserService.getUserById(id);
@@ -94,7 +115,7 @@ export class UserService {
         payload.password = await argon2.hash(payload.password);
       }
 
-      const updated = await UserRepository.update(id, payload);
+      const updated = await UserRepository.updateUser(id, payload);
       if (!updated) {
         throw new NotFoundError(`Utilisateur ${id} non trouvé`);
       }
@@ -111,7 +132,7 @@ export class UserService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
-    const user = await UserRepository.findByIdWithPassword(id);
+    const user = await UserRepository.getUserByIdWithPassword(id);
     if (!user) {
       throw new NotFoundError(`Utilisateur ${id} non trouvé`);
     }
@@ -122,7 +143,7 @@ export class UserService {
     }
 
     const hashedPassword = await argon2.hash(newPassword);
-    const updated = await UserRepository.update(id, {
+    const updated = await UserRepository.updateUser(id, {
       password: hashedPassword,
     });
     return updated;
@@ -132,7 +153,7 @@ export class UserService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
-    const updated = await UserRepository.update(id, { isActive });
+    const updated = await UserRepository.updateUser(id, { isActive });
     if (!updated) {
       throw new NotFoundError(`Utilisateur ${id} non trouvé`);
     }

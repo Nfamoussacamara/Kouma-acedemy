@@ -5,6 +5,7 @@ import {
 import { isValidObjectId } from "../../../infrastructure/database/mongoose.js";
 import { getPagination } from "../../../shared/utils/pagination.util.js";
 import { createSearchFilter } from "../../../shared/utils/search.util.js";
+import { removeUndefinedValues } from "../../../shared/utils/payload.util.js";
 import typeEquipementRepository from "../repositories/typeEquiment.repository.js";
 
 export class TypeEquipementService {
@@ -63,7 +64,16 @@ export class TypeEquipementService {
       throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
     }
 
-    const updated = await typeEquipementRepository.updateTypeEquipement(id, dto);
+    const payload = removeUndefinedValues({
+      name: dto.name,
+      description: dto.description,
+    });
+
+    if (Object.keys(payload).length === 0) {
+      return existing;
+    }
+
+    const updated = await typeEquipementRepository.updateTypeEquipement(id, payload);
     return updated;
   };
 

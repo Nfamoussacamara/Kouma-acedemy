@@ -5,6 +5,7 @@ import { FournisseurService } from '../../fournisseur/services/fournisseur.servi
 import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
 import { getPagination } from '../../../shared/utils/pagination.util.js';
 import { createSearchFilter } from '../../../shared/utils/search.util.js';
+import { removeUndefinedValues } from '../../../shared/utils/payload.util.js';
 
 export class EquipementService {
   static listEquipements = async (query = {}) => {
@@ -91,7 +92,15 @@ export class EquipementService {
       }
     }
 
-    const updated = await EquipementRepository.updateEquipement(id, dto);
+    const payload = removeUndefinedValues({
+      designation: dto.designation,
+      type: dto.type,
+      fournisseur: dto.fournisseur,
+      caracteristique: dto.caracteristique,
+      prix: dto.prix,
+    });
+
+    const updated = await EquipementRepository.updateEquipement(id, payload);
 
     if (dto.fournisseur && dto.fournisseur !== oldFournisseurId) {
       if (oldFournisseurId) {

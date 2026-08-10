@@ -34,7 +34,15 @@ export const updateUserSchema = yup.object({
     .string()
     .min(2, 'Le prénom doit avoir au moins 2 caractères'),
   tel: yup
-    .string(),
+    .string()
+    .test('is-valid-phone',
+      'Numéro de téléphone invalide',
+      (value) =>{
+        if (!value) return true;
+        return phoneNumberValidator(value);
+      }
+    ),
+
   type: yup
     .string()
     .oneOf(['Admin', 'Utilisateur'], 'Rôle invalide'),

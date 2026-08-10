@@ -51,7 +51,7 @@ export class FournisseurRepository {
 
   static deleteLogically = async (id) => {
     const result = await FournisseurModel.updateOne(
-      { _id: id, isActive: true },
+      { _id: id, deletedAt: null },
       { isActive: false, deletedAt: new Date() }
     );
     return result.modifiedCount > 0;
