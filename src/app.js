@@ -11,7 +11,7 @@ import { openApiSpec } from '../docs/swagger/openapi.js';
 export function createApp() {
   const app = express();
 
-  // app.use(helmet());
+  app.use(helmet());
   app.set("trust proxy", 1);
   app.disable("x-powered-by")
   app.use(createCorsMiddleware());

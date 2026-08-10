@@ -7,6 +7,8 @@ export const fournisseurPaths = {
       parameters: [
         { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
         { name: 'limit', in: 'query', schema: { type: 'integer', default: 10 } },
+        { name: 'search', in: 'query', schema: { type: 'string', description: 'Recherche par nom, adresse ou contact' } },
+        { name: 'status', in: 'query', schema: { type: 'string', enum: ['active', 'inactive'] } },
       ],
       responses: {
         200: { description: 'Liste des fournisseurs' }
@@ -86,6 +88,33 @@ export const fournisseurPaths = {
       responses: {
         204: { description: 'Fournisseur supprimé' },
         400: { description: 'Impossible de supprimer, des équipements y sont liés.' }
+      }
+    }
+  },
+  '/fournisseurs/{id}/status': {
+    patch: {
+      tags: ['Fournisseurs'],
+      summary: 'Activer / Désactiver un fournisseur (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+             schema: {
+               type: 'object',
+               required: ['isActive'],
+               properties: {
+                 isActive: { type: 'boolean' }
+               }
+             }
+          }
+        }
+      },
+      responses: {
+        200: { description: 'Statut mis à jour' }
       }
     }
   }

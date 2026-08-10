@@ -15,6 +15,14 @@ export const fournisseurSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    }
   },
   {
     timestamps: true,

@@ -1,7 +1,8 @@
-import { NotFoundError, ConflictError } from '../../../shared/errors/AppError.js';
+import { NotFoundError, ConflictError, ValidationError } from '../../../shared/errors/AppError.js';
 import { FournisseurRepository } from '../repositories/fournisseur.repository.js';
 import { EquipementRepository } from '../../equipement/repositories/equipement.repository.js';
 import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
+import { createSearchFilter } from '../../../shared/utils/search.util.js';
 
 export class FournisseurService {
   static listFournisseurs = async (query = {}) => {
@@ -9,8 +10,22 @@ export class FournisseurService {
     const limit = Number(query.limit) || 20;
     
     const skip = (page - 1) * limit;
+    const searchFilter = createSearchFilter(query.search, ['nom', 'contact','adresse']);
 
-    const [documents, total] = await FournisseurRepository.findAll({ skip, limit });
+    const filter = {
+      ...searchFilter,
+      deletedAt: null
+    };
+
+    if (query.status === 'active') {
+      filter.isActive = true;
+    } else if (query.status === 'inactive') {
+      filter.isActive = false;
+    }
+
+    filter.deletedAt = null;
+
+    const [documents, total] = await FournisseurRepository.getAllFournisseurs({ skip, limit, filter });
 
     return {
       data: documents,
@@ -20,9 +35,9 @@ export class FournisseurService {
 
   static getFournisseurById = async (id) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
-    const fournisseur = await FournisseurRepository.findById(id);
+    const fournisseur = await FournisseurRepository.getFournisseurById(id);
     if (!fournisseur) {
       throw new NotFoundError(`Fournisseur ${id} non trouvé`);
     }
@@ -30,14 +45,14 @@ export class FournisseurService {
   };
 
   static createFournisseur = async (dto) => {
-    return FournisseurRepository.create(dto);
+    return FournisseurRepository.createFournisseur(dto);
   };
 
   static updateFournisseur = async (id, dto) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
-    const updated = await FournisseurRepository.update(id, dto);
+    const updated = await FournisseurRepository.updateFournisseur(id, dto);
     if (!updated) {
       throw new NotFoundError(`Fournisseur ${id} non trouvé`);
     }
@@ -46,15 +61,13 @@ export class FournisseurService {
 
   static deleteFournisseur = async (id) => {
     if (!isValidObjectId(id)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
-    // 1. Vérifier si le fournisseur existe
-    const fournisseur = await FournisseurRepository.findById(id);
+    const fournisseur = await FournisseurRepository.getFournisseurById(id);
     if (!fournisseur) {
       throw new NotFoundError(`Fournisseur ${id} non trouvé`);
     }
-
-    // 2. Vérifier s'il est lié à des équipements actifs (dans le parc)
+    
     const countActive = await EquipementRepository.countActiveByProvider(id);
     if (countActive > 0) {
       throw new ConflictError(
@@ -62,13 +75,26 @@ export class FournisseurService {
       );
     }
 
-    // 3. Supprimer le fournisseur
-    await FournisseurRepository.delete(id);
+    const success = await FournisseurRepository.deleteLogically(id);
+    if (!success) {
+      throw new NotFoundError(`Fournisseur ${id} non trouvé ou déjà supprimé`);
+    }
+  };
+
+  static toggleFournisseurStatus = async (id, { isActive }) => {
+    if (!isValidObjectId(id)) {
+      throw new ValidationError("Identifiant fournisseur invalide");
+    }
+    const updated = await FournisseurRepository.updateStatus(id, isActive);
+    if (!updated) {
+      throw new NotFoundError(`Fournisseur ${id} non trouvé`);
+    }
+    return updated;
   };
 
   static recalculateMontant = async (fournisseurId) => {
     if (!isValidObjectId(fournisseurId)) {
-      throw new Error("Identifiant fournisseur invalide");
+      throw new ValidationError("Identifiant fournisseur invalide");
     }
     const sumResult = await EquipementRepository.sumPricesByProvider(fournisseurId);
     await FournisseurRepository.updateMontant(fournisseurId, sumResult);

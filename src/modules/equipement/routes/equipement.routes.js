@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { validate, validateQuery, validateParams, validateBody } from '../../../middlewares/validate.middleware.js';
+import { validateQuery, validateParams, validateBody } from '../../../middlewares/validate.middleware.js';
 import { authMiddleware } from '../../../middlewares/auth.middleware.js';
 import { requireRole } from '../../../middlewares/role.middleware.js';
 import { EquipementController } from '../controllers/equipement.controller.js';
@@ -8,6 +8,7 @@ import {
   createEquipementSchema,
   updateEquipementSchema,
   listEquipementsQuerySchema,
+  toggleStatusSchema,
 } from '../validators/equipement.validator.js';
 import { apiRateLimit } from '../../../middlewares/rate-limit.midleware.js';
 import { auditlogmidleware } from '../../../middlewares/logger.midleware.js';
@@ -18,13 +19,26 @@ export function createEquipementRoutes() {
   router.use(authMiddleware);
 
 
-  router.get('/', apiRateLimit, auditlogmidleware, validateQuery(listEquipementsQuerySchema), EquipementController.list);
+  router.get('/', 
+    apiRateLimit, 
+    auditlogmidleware, 
+    validateQuery(listEquipementsQuerySchema), 
+    EquipementController.list);
 
 
-  router.get('/:id' , apiRateLimit, auditlogmidleware, validateParams(idParamSchema), EquipementController.getById);
+  router.get('/:id' , 
+    apiRateLimit, 
+    auditlogmidleware, 
+    validateParams(idParamSchema), 
+    EquipementController.getById);
 
 
-  router.post('/' , apiRateLimit, auditlogmidleware, requireRole(["Admin"]), validateBody(createEquipementSchema), EquipementController.create );
+  router.post('/' , 
+    apiRateLimit, 
+    auditlogmidleware, 
+    requireRole(["Admin"]), 
+    validateBody(createEquipementSchema), 
+    EquipementController.create );
 
  
   router.patch(
@@ -37,8 +51,21 @@ export function createEquipementRoutes() {
     EquipementController.update
   );
 
+    router.patch(
+      '/:id/status',
+      apiRateLimit,
+      auditlogmidleware,
+      requireRole(["Admin"]),
+      validateBody(toggleStatusSchema),
+      EquipementController.toggleStatus
+    );
 
-  router.delete('/:id', apiRateLimit, auditlogmidleware, requireRole(["Admin"]), validateParams(idParamSchema), EquipementController.delete);
+  router.delete('/:id',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(idParamSchema),
+    EquipementController.delete);
 
   return router;
 }

@@ -1,24 +1,24 @@
 import { FournisseurModel } from '../infrastructure/persistence/models/Fournisseur.model.js';
 
 export class FournisseurRepository {
-  static findAll = async ({ skip, limit }) => {
+  static getAllFournisseurs = async ({ skip, limit, filter }) => {
     return Promise.all([
-      FournisseurModel.find()
+      FournisseurModel.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        ,
-      FournisseurModel.countDocuments(),
+        .lean(),
+      FournisseurModel.countDocuments(filter),
     ]);
   };
 
-  static findById = async (id) => {
+  static getFournisseurById = async (id) => {
 
-    const document = await FournisseurModel.findById(id);
+    const document = await FournisseurModel.findOne({ _id: id, deletedAt: null });
     return document ? document : null;
   };
 
-  static create = async (dto) => {
+  static createFournisseur = async (dto) => {
     const document = await FournisseurModel.create({
       nom: dto.nom,
       contact: dto.contact,
@@ -28,9 +28,9 @@ export class FournisseurRepository {
     return document
   };
 
-  static update = async (id, payload) => {
+  static updateFournisseur = async (id, payload) => {
 
-    const document = await FournisseurModel.findByIdAndUpdate(id, payload, {
+    const document = await FournisseurModel.findOneAndUpdate({ _id: id, deletedAt: null }, payload, {
       new: true,
       runValidators: true,
     });
@@ -40,8 +40,8 @@ export class FournisseurRepository {
 
   static updateMontant = async (id, montantValue) => {
 
-    const document = await FournisseurModel.findByIdAndUpdate(
-      id,
+    const document = await FournisseurModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
       { montant: montantValue },
       { new: true }
     );
@@ -49,9 +49,19 @@ export class FournisseurRepository {
     return document ? document : null;
   };
 
-  static delete = async (id) => {
+  static deleteLogically = async (id) => {
+    const result = await FournisseurModel.updateOne(
+      { _id: id, isActive: true },
+      { isActive: false, deletedAt: new Date() }
+    );
+    return result.modifiedCount > 0;
+  };
 
-    const result = await FournisseurModel.deleteOne({ _id: id });
-    return result.deletedCount > 0;
+  static updateStatus = async (id, isActive) => {
+    const result = await FournisseurModel.updateOne(
+      { _id: id },
+      { isActive }
+    );
+    return result.modifiedCount > 0;
   };
 }
