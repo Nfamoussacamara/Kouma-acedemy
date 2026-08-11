@@ -12,7 +12,7 @@ export class TypeEquipementService {
   static listTypeEquipements = async (query = {}) => {
     const { page, limit, skip } = getPagination(query);
     const searchFilter = createSearchFilter(query.search, [
-      "name",
+      "nom",
       "description",
     ]);
     const filter = {
@@ -65,7 +65,7 @@ export class TypeEquipementService {
     }
 
     const payload = removeUndefinedValues({
-      name: dto.name,
+      nom: dto.nom,
       description: dto.description,
     });
 
