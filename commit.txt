@@ -1,7 +1,0 @@
-﻿refactor(core): standardisation complète de l'architecture backend et soft-delete
-
-- Uniformisation poussée de la nomenclature (Repositories & Services) pour tous les modules (Fournisseur, Equipement, TypeEquipement, User).
-- Renforcement du système de Soft Delete (champ deletedAt généralisé sur tous les schémas).
-- Remplacement du findById par des findOne filtrés stricts avec deletedAt: null pour sécuriser les récuperations en base.
-- Synchronisation complète de la documentation Swagger pour inclure les nouveaux filtres et les endpoints de basculement de status.
-- Nettoyage du code et suppression de doublons dans les contrôleurs.

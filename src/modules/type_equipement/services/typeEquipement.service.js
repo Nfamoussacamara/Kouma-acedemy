@@ -27,7 +27,7 @@ export class TypeEquipementService {
 
     filter.deletedAt = null;
 
-    const [documents, total] = await typeEquipementRepository.findAll({
+    const [documents, total] = await typeEquipementRepository.getAllTypeEquipements({
       skip,
       limit,
       filter,
@@ -96,7 +96,7 @@ export class TypeEquipementService {
       throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
     }
 
-    const success = await typeEquipementRepository.deleteTypeEquipement(id);
+    const success = await typeEquipementRepository.deleteLogically(id);
     if (!success) {
       throw new NotFoundError(
         `Type d'équipement ${id} non trouvé ou déjà supprimé`,

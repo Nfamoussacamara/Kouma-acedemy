@@ -29,7 +29,7 @@ export class UserService {
 
     filter.deletedAt = null;
 
-    const [documents, total] = await UserRepository.findAll({
+    const [documents, total] = await UserRepository.getAllUsers({
       skip,
       limit,
       filter,
@@ -60,7 +60,7 @@ export class UserService {
     }
 
     const phone = formatPhoneNumber(dto.tel);
-    const existingUser = await UserRepository.findUserByPhone(phone);
+    const existingUser = await UserRepository.getUserByPhone(phone);
     if (existingUser) {
       throw new ConflictError("Ce numéro de téléphone est déjà utilisé");
     }
@@ -90,7 +90,7 @@ export class UserService {
     
     if (dto.tel) {
       const phone = formatPhoneNumber(dto.tel);
-      const existingUser = await UserRepository.findUserByPhone(phone);
+      const existingUser = await UserRepository.getUserByPhone(phone);
       if (existingUser && existingUser._id.toString() !== id) {
         throw new ConflictError("Ce numéro de téléphone est déjà utilisé par un autre compte !");
       }

@@ -1,7 +1,7 @@
 import typeEquipementModel from "../infrastructure/models/typeEquipement.model.js";
 
 export default class typeEquipementRepository {
-  static findAll = async ({ skip, limit, filter }) => {
+  static getAllTypeEquipements = async ({ skip, limit, filter }) => {
     return Promise.all([
       typeEquipementModel
         .find(filter)
@@ -32,7 +32,7 @@ export default class typeEquipementRepository {
     return equipement ? equipement : null;
   };
 
-  static deleteTypeEquipement = async (id) => {
+  static deleteLogically = async (id) => {
     const result = await typeEquipementModel.updateOne(
       { _id: id, deletedAt: null },
       { isActive: false , deletedAt : new Date()},
