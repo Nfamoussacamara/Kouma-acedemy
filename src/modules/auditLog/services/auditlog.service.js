@@ -2,8 +2,8 @@ import { isValidObjectId } from "../../../infrastructure/database/mongoose.js";
 import { AuditLogRepository } from "../repositories/auditlog.repository.js";
 
 export class AuditLogService {
-    static create = async (date) =>{ 
-        const auditlog = await AuditLogRepository.create(date);
+    static createAuditLog = async (data) =>{ 
+        const auditlog = await AuditLogRepository.createAuditLog(data);
         return auditlog;
     }
 

@@ -7,7 +7,7 @@ import { UserRepository } from '../repositories/user.repository.js';
 export class AuthService {
   static login = async ({ username, password }) => {
     // 1. Trouver l'utilisateur avec son password (nécessite le select: false du password)
-    const user = await UserRepository.findByUsernameWithPassword(username);
+    const user = await UserRepository.getUserByUsernameWithPassword(username);
     if (!user) {
       throw new UnauthorizedError('Nom d\'utilisateur ou mot de passe incorrect');
     }
@@ -52,7 +52,7 @@ export class AuthService {
       // Vérifier la validité du refresh token
       const decoded = jwt.verify(refreshToken, config.jwtSecret);
 
-      const user = await UserRepository.findById(decoded.id);
+      const user = await UserRepository.getUserById(decoded.id);
       if (!user) {
         throw new UnauthorizedError('Utilisateur non trouvé');
       }

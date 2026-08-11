@@ -3,7 +3,7 @@ import { auditLogModel } from "../infrastructure/persistence/models/auditlog.mod
 
 export class AuditLogRepository {
     
-    static create = async (data) =>{
+    static createAuditLog = async (data) =>{
         
         try{
             const auditlog = await auditLogModel.create(data)

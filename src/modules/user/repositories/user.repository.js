@@ -1,7 +1,7 @@
 import { UserModel } from "../infrastructure/persistence/models/User.model.js";
 
 export class UserRepository {
-  static findAll = async ({ skip, limit, filter }) => {
+  static getAllUsers = async ({ skip, limit, filter }) => {
     return Promise.all([
       UserModel.find(filter)
         .sort({ createdAt: -1 })
@@ -67,7 +67,7 @@ export class UserRepository {
     return result.modifiedCount > 0;
   };
 
-  static findUserByPhone = async (phone) => {
+  static getUserByPhone = async (phone) => {
     const document = await UserModel.findOne({
       tel: phone
     });

@@ -24,7 +24,7 @@ export const auditlogmidleware = (req, res, next) => {
                 ? req.auditDescription
                 : `${req.auditDescription} (ÉCHEC)`;
                 
-            await AuditLogService.create({
+            await AuditLogService.createAuditLog({
                 user: req.user?.id || null,
                 action: `${req.method}_${req.path}`,
                 url: req.originalUrl,
