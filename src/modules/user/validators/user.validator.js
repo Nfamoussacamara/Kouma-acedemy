@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import  {phoneNumberValidator}  from '../../../shared/utils/phone.util.js';
 
 export const createUserSchema = yup.object({
   username: yup
