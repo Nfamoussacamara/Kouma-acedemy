@@ -10,7 +10,7 @@ export class TypeEquipementController {
 
     static getTypeEquipementById = asyncHandler(async (req, res, next) => {
         const result = await TypeEquipementService.getTypeEquipementById(req.params.id);
-        return sendSuccess(res, result, "Type d'equipement trouvé avec succès");
+        return sendSuccess(res, {data : result}, "Type d'equipement trouvé avec succès");
     });
 
     static createTypeEquipement = asyncHandler(async (req, res, next) => {
@@ -20,7 +20,7 @@ export class TypeEquipementController {
 
     static updateTypeEquipement = asyncHandler(async (req, res, next) => {
         const result = await TypeEquipementService.updateTypeEquipement(req.params.id, req.body);
-        return sendSuccess(res, result, "Type d'equipement mis à jour avec succès");
+        return sendSuccess(res, {data : result}, "Type d'equipement mis à jour avec succès");
     });
 
     static deleteTypeEquipement = asyncHandler(async (req, res, next) => {
