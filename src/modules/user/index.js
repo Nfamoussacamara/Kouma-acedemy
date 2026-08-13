@@ -6,6 +6,7 @@ import { AuthController } from './controllers/auth.controller.js';
 import { createUserRoutes } from './routes/user.routes.js';
 import { createAuthRoutes } from './routes/auth.routes.js';
 
+
 import { Router } from 'express';
 
 /**
