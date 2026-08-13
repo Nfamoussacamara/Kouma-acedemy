@@ -74,4 +74,10 @@ export class UserRepository {
     return document ? document : null;
   };
 
+  static updateStatus = async (id, isActive) => {
+    const result = await UserModel.updateOne({ _id: id }, { isActive });
+    return result.modifiedCount > 0;
+  };
+
+
 }

@@ -153,7 +153,7 @@ export class UserService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
-    const updated = await UserRepository.updateUser(id, { isActive });
+    const updated = await UserRepository.updateStatus(id, isActive);
     if (!updated) {
       throw new NotFoundError(`Utilisateur ${id} non trouvé`);
     }
