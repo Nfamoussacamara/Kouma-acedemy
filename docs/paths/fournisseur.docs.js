@@ -24,11 +24,11 @@ export const fournisseurPaths = {
           'application/json': {
              schema: {
                type: 'object',
-               required: ['nom', 'adresse', 'contact'],
+               required: ['nom', 'contact'],
                properties: {
                  nom: { type: 'string' },
-                 adresse: { type: 'string' },
                  contact: { type: 'string' },
+                 adresse: { type: 'string' },
                }
              }
           }

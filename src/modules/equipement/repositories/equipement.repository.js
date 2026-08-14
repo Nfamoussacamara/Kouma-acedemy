@@ -21,6 +21,10 @@ export class EquipementRepository {
     return document;
   };
 
+  static getEquipementsByIds = async (ids) => {
+    return EquipementModel.find({ _id: { $in: ids }, deletedAt: null });
+  };
+
   static createEquipement = async (dto) => {
     const document = await EquipementModel.create({
       designation: dto.designation,

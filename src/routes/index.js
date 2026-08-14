@@ -4,6 +4,7 @@ import { createFournisseurModule } from '../modules/fournisseur/index.js';
 import { createEquipementModule } from '../modules/equipement/index.js';
 import { createTypeEquipementModule } from '../modules/type_equipement/index.js';
 import { createDashboardModule } from '../modules/dashboard/index.js';
+import { createCommandeModule } from '../modules/commande/index.js';
 
 export function registerRoutes(apiRouter) {
   const modules = [
@@ -12,6 +13,7 @@ export function registerRoutes(apiRouter) {
     createEquipementModule(),
     createTypeEquipementModule(),
     createDashboardModule(),
+    createCommandeModule(),
   ];
 
   for (const mod of modules) {

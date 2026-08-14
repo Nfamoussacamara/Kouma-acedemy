@@ -1,40 +1,54 @@
-import {UserModel} from "../../user/infrastructure/persistence/models/User.model.js";
-import {EquipementModel} from "../../equipement/infrastructure/persistence/models/Equipement.model.js";
+import { UserModel } from "../../user/infrastructure/persistence/models/User.model.js";
+import { EquipementModel } from "../../equipement/infrastructure/persistence/models/Equipement.model.js";
 import TypeEquipementModel from "../../type_equipement/infrastructure/models/typeEquipement.model.js";
-import {FournisseurModel} from "../../fournisseur/infrastructure/persistence/models/Fournisseur.model.js";
+import { FournisseurModel } from "../../fournisseur/infrastructure/persistence/models/Fournisseur.model.js";
+import { CommandeModel } from "../../commande/infrastructure/persistence/models/Commande.model.js";
 
 class DashboardRepository {
   static async getDashboardStats() {
-
-
-    
     const [
       usersCount,
       equipementsCount,
       typeEquipementsCount,
       fournisseursCount,
-      montantTotal
+      montantTotalEquipements,
+      commandesCount,
+      commandesEnAttenteCount,
+      commandesEnCoursCount,
+      commandesLivreesCount,
+      montantTotalCommandesAggregation,
     ] = await Promise.all([
-      UserModel.countDocuments({deletedAt: null}),
-      EquipementModel.countDocuments({deletedAt: null}),
-      TypeEquipementModel.countDocuments({deletedAt: null}),
-      FournisseurModel.countDocuments({deletedAt: null}),
+      UserModel.countDocuments({ deletedAt: null }),
+      EquipementModel.countDocuments({ deletedAt: null }),
+      TypeEquipementModel.countDocuments({ deletedAt: null }),
+      FournisseurModel.countDocuments({ deletedAt: null }),
       EquipementModel.aggregate([
-      {
-        $match: { deletedAt: null },
-      },
-      {
-        $group: { _id: null, total: { $sum: "$prix" } },
-      }
-    ])
-    
+        { $match: { deletedAt: null } },
+        { $group: { _id: null, total: { $sum: "$prix" } } },
+      ]),
+      CommandeModel.countDocuments({ deletedAt: null }),
+      CommandeModel.countDocuments({ status: "EN_ATTENTE", deletedAt: null }),
+      CommandeModel.countDocuments({ status: "EN_COURS", deletedAt: null }),
+      CommandeModel.countDocuments({ status: "LIVREE", deletedAt: null }),
+      CommandeModel.aggregate([
+        { $match: { deletedAt: null } },
+        { $group: { _id: null, total: { $sum: "$prixtotal" } } },
+      ]),
     ]);
+
     return {
       usersCount,
       equipementsCount,
       typeEquipementsCount,
       fournisseursCount,
-      montantTotal: montantTotal[0]?.total ?? 0,
+      montantTotal: montantTotalEquipements[0]?.total ?? 0,
+      commandes: {
+        total: commandesCount,
+        enAttente: commandesEnAttenteCount,
+        enCours: commandesEnCoursCount,
+        livrees: commandesLivreesCount,
+        montantTotal: montantTotalCommandesAggregation[0]?.total ?? 0,
+      },
     };
   }
 }

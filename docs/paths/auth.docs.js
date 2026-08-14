@@ -35,9 +35,9 @@ export const authPaths = {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['token'],
+              required: ['refreshToken'],
               properties: {
-                token: { type: 'string' },
+                refreshToken: { type: 'string' },
               },
             }
           }

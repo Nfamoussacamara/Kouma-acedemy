@@ -24,9 +24,9 @@ export const typeEquipementPaths = {
           'application/json': {
              schema: {
                type: 'object',
-               required: ['name', 'description'],
+               required: ['nom', 'description'],
                properties: {
-                 name: { type: 'string' },
+                 nom: { type: 'string' },
                  description: { type: 'string' }
                }
              }
@@ -65,7 +65,7 @@ export const typeEquipementPaths = {
              schema: {
                type: 'object',
                properties: {
-                 name: { type: 'string' },
+                 nom: { type: 'string' },
                  description: { type: 'string' }
                }
              }
