@@ -3,24 +3,26 @@ import * as yup from "yup";
 export const createTypeEquipementSchema = yup.object({
   nom: yup
     .string()
-    .min(2, "Le nom doit contenir au moins 2 caracteres")
+    .min(2, "Le nom doit contenir au moins 2 caractères")
     .required("Le nom est requis"),
 
   description: yup
     .string()
-    .min(2, "La description doit contenir au moins 2 caracteres")
-    .required("La description est requise"),
+    .trim()
+    .nullable()
+    .optional(),
 });
 
 export const updateTypeEquipementSchema = yup.object({
   nom: yup
     .string()
-    .min(2, "Le nom doit contenir au moins 2 caracteres")
-    .required("Le nom est requis"),
+    .min(2, "Le nom doit contenir au moins 2 caractères")
+    .optional(),
   description: yup
     .string()
-    .min(2, "La description doit contenir au moins 2 caracteres")
-    .required("La description est requise"),
+    .trim()
+    .nullable()
+    .optional(),
 });
 
 export const deleteTypeEquipementSchema = yup.object({
