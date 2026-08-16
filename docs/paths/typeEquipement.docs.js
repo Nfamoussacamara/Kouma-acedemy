@@ -24,10 +24,10 @@ export const typeEquipementPaths = {
           'application/json': {
              schema: {
                type: 'object',
-               required: ['nom', 'description'],
+               required: ['nom'],
                properties: {
                  nom: { type: 'string' },
-                 description: { type: 'string' }
+                 description: { type: 'string', nullable: true }
                }
              }
           }

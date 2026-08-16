@@ -1,5 +1,6 @@
 import { NotFoundError, ValidationError } from '../../../shared/errors/AppError.js';
 import { EquipementRepository } from '../repositories/equipement.repository.js';
+import { EquipementModel } from '../infrastructure/persistence/models/Equipement.model.js';
 import { FournisseurRepository } from '../../fournisseur/repositories/fournisseur.repository.js';
 import { FournisseurService } from '../../fournisseur/services/fournisseur.service.js';
 import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
@@ -55,17 +56,21 @@ export class EquipementService {
   };
 
   static createEquipement = async (dto) => {
-    if (dto.fournisseur && !isValidObjectId(dto.fournisseur)) {
-      throw new ValidationError("Identifiant fournisseur invalide");
-    }
-    const fournisseur = await FournisseurRepository.getFournisseurById(dto.fournisseur);
-    if (!fournisseur) {
-      throw new NotFoundError(`Le fournisseur ${dto.fournisseur} n'existe pas`);
+    if (dto.fournisseur) {
+      if (!isValidObjectId(dto.fournisseur)) {
+        throw new ValidationError("Identifiant fournisseur invalide");
+      }
+      const fournisseur = await FournisseurRepository.getFournisseurById(dto.fournisseur);
+      if (!fournisseur) {
+        throw new NotFoundError(`Le fournisseur ${dto.fournisseur} n'existe pas`);
+      }
     }
 
     const equipement = await EquipementRepository.createEquipement(dto);
 
-    await FournisseurService.recalculateMontant(dto.fournisseur);
+    if (dto.fournisseur) {
+      await FournisseurService.recalculateMontant(dto.fournisseur);
+    }
 
     return equipement;
   };
@@ -151,5 +156,27 @@ export class EquipementService {
 
     const updated = await EquipementRepository.updateStatus(id, isActive);
     return updated;
+  };
+
+  static enregistrerPrixAchat = async ({ equipementId, nouveauPrix, commandeId, fournisseurId }) => {
+    const equipement = await EquipementRepository.getEquipementById(equipementId);
+    if (!equipement) return null;
+
+    if (nouveauPrix > 0 && equipement.prix !== nouveauPrix) {
+      const entreeHistorique = {
+        prix: equipement.prix || 0,
+        date: new Date(),
+        commande: commandeId,
+        fournisseur: fournisseurId,
+      };
+
+      await EquipementModel.updateOne(
+        { _id: equipementId },
+        {
+          $set: { prix: nouveauPrix },
+          $push: { historique_prix: entreeHistorique },
+        }
+      );
+    }
   };
 }

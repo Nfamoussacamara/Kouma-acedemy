@@ -19,7 +19,28 @@ export const equipementSchema = new mongoose.Schema(
     },
     prix: {
       type: Number,
+      default: 0,
     },
+    historique_prix: [
+      {
+        prix: {
+          type: Number,
+          required: true,
+        },
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+        commande: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Commande",
+        },
+        fournisseur: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Fournisseur",
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

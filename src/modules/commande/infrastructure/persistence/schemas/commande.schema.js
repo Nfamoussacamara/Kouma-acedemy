@@ -6,6 +6,11 @@ export const commandeSchema = new mongoose.Schema(
       type: String,
     },
 
+    panne: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Panne",
+    },
+
     fournisseur: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Fournisseur",
@@ -23,33 +28,77 @@ export const commandeSchema = new mongoose.Schema(
           ref: "Equipement",
         },
 
-        quantiteCommandee: {
-          type: Number
+        typeEquipement: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "TypeEquipement",
         },
 
-        quantiteLivree: {
-          type: Number
+        designation: {
+          type: String,
+        },
+
+        quantiteCommandee: {
+          type: Number,
+          required: true,
+          default: 1,
+        },
+
+        quantiteRecue: {
+          type: Number,
+          default: 0,
         },
 
         prixUnitaire: {
-          type: Number
+          type: Number,
+          default: 0,
         },
+      },
+    ],
+
+    receptions: [
+      {
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+        receptionnePar: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        articlesRecus: [
+          {
+            equipement: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "Equipement",
+            },
+            quantiteRecue: {
+              type: Number,
+              required: true,
+            },
+            prixUnitaire: {
+              type: Number,
+              default: 0,
+            },
+          },
+        ],
       },
     ],
 
     status: {
       type: String,
       enum: [
-        "EN_ATTENTE",
-        "EN_COURS",
-        "LIVREE",
+        "BROUILLON",
+        "EMISE",
+        "PARTIELLEMENT_RECUE",
+        "RECUE",
         "ANNULEE",
       ],
-      default: "EN_ATTENTE",
+      default: "BROUILLON",
     },
 
     prixtotal: {
       type: Number,
+      default: 0,
     },
 
     isActive: {
