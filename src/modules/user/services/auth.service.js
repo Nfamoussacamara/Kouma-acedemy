@@ -4,6 +4,8 @@ import config from '../../../config/index.js';
 import { UnauthorizedError } from '../../../shared/errors/AppError.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
+import { TokenBlacklistRepository } from '../repositories/tokenBlacklist.repository.js';
+
 export class AuthService {
   static login = async ({ username, password }) => {
     // 1. Trouver l'utilisateur avec son password (nécessite le select: false du password)
@@ -74,4 +76,33 @@ export class AuthService {
       throw new UnauthorizedError('Jeton de rafraîchissement invalide ou expiré');
     }
   };
+
+  static logout = async ({ token, userId = null }) => {
+    if (token) {
+      try {
+        // Décode le token pour récupérer la date d'expiration exacte (exp en secondes)
+        const decoded = jwt.decode(token);
+        const expiresAt = decoded?.exp
+          ? new Date(decoded.exp * 1000)
+          : new Date(Date.now() + 15 * 60 * 1000); // Fallback: 15 min
+
+        await TokenBlacklistRepository.addToken({
+          token,
+          expiresAt,
+          userId,
+          reason: "logout",
+        });
+      } catch (err) {
+        // En cas d'erreur de décodage, enregistre avec une expiration par défaut
+        await TokenBlacklistRepository.addToken({
+          token,
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+          userId,
+          reason: "logout",
+        });
+      }
+    }
+    return { success: true };
+  };
 }
+

@@ -30,4 +30,15 @@ export class AuthController {
       message: 'Jeton de session rafraîchi avec succès',
     });
   });
+
+  static logout = asyncHandler(async (req, res) => {
+    const token = req.token || (req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7) : null);
+    await AuthService.logout({ token, userId: req.user?.id });
+    res.json({
+      success: true,
+      message: 'Déconnexion réussie',
+    });
+  });
 }
+
