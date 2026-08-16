@@ -1,28 +1,17 @@
 import { AuditLogService } from "../modules/auditLog/services/auditlog.service.js";
 
-
-export const auditDescription = (description) => {
-    return (req, res, next) => {
-        req.auditDescription = description;
-        next();
-    };
-};
-
-
 export const auditlogmidleware = (req, res, next) => {
-
     const start = Date.now();
 
     res.on("finish", async () => {
-
         try {
             const duration = Date.now() - start;
-
             const success = res.statusCode >= 200 && res.statusCode < 400;
 
+            const baseDescription = `${req.method} ${req.originalUrl}`;
             const description = success
-                ? req.auditDescription
-                : `${req.auditDescription} (ÉCHEC)`;
+                ? baseDescription
+                : `${baseDescription} (ÉCHEC)`;
                 
             await AuditLogService.createAuditLog({
                 user: req.user?.id || null,
@@ -36,10 +25,8 @@ export const auditlogmidleware = (req, res, next) => {
             });
         } catch(error) {
             console.error("Erreur création audit log :", error);
-
         }
-
     });
 
     next();
-};
+};
