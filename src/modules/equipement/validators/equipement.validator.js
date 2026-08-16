@@ -17,7 +17,8 @@ export const createEquipementSchema = yup.object({
       objectIdRegex,
       "Le fournisseur doit être un identifiant de base de données valide",
     )
-    .required("Le fournisseur est requis"),
+    .optional()
+    .nullable(),
   caracteristique: yup.string().trim().nullable(),
   prix: yup
     .number()

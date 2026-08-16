@@ -26,20 +26,20 @@ export const equipementPaths = {
           'application/json': {
              schema: {
                type: 'object',
-               required: ['designation', 'type', 'fournisseur', 'prix'],
+               required: ['designation', 'type', 'prix'],
                properties: {
                  designation: { type: 'string' },
-                 type: { type: 'string' },
-                 fournisseur: { type: 'string', description: 'ID du fournisseur' },
-                 caracteristique: { type: 'string' },
-                 prix: { type: 'number' },
+                 type: { type: 'string', description: 'ID du type d\'équipement' },
+                 fournisseur: { type: 'string', description: 'ID du fournisseur (optionnel)', nullable: true },
+                 caracteristique: { type: 'string', nullable: true },
+                 prix: { type: 'number', default: 0 },
                }
              }
           }
         }
       },
       responses: {
-        201: { description: 'Equipement créé' }
+        201: { description: 'Equipement créé avec succès' }
       }
     }
   },
