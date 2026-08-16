@@ -24,6 +24,17 @@ export class CommandeController {
     res.json({ success: true, data });
   });
 
+
+  static receptionnerCommande = asyncHandler(async (req, res) => {
+    const userId = req.user?.id || req.user?._id;
+    const data = await CommandeService.receptionnerCommande(req.params.id, req.body, userId);
+    res.json({
+      success: true,
+      data,
+      message: "Réception enregistrée avec succès",
+    });
+  });
+
   static deleteCommande = asyncHandler(async (req, res) => {
     await CommandeService.deleteCommande(req.params.id);
     res.json({ success: true, message: "Commande supprimée avec succès" });

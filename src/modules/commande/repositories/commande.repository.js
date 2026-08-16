@@ -7,7 +7,9 @@ export class CommandeRepository {
       CommandeModel.find(finalFilter)
         .populate('fournisseur')
         .populate('demandeur', 'nom prenom username tel type')
+        .populate('panne')
         .populate('articles.equipement')
+        .populate('articles.typeEquipement')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -20,7 +22,9 @@ export class CommandeRepository {
     const document = await CommandeModel.findOne({ _id: id, deletedAt: null })
       .populate('fournisseur')
       .populate('demandeur', 'nom prenom username tel type')
-      .populate('articles.equipement');
+      .populate('panne')
+      .populate('articles.equipement')
+      .populate('articles.typeEquipement');
     return document ? document : null;
   };
 
@@ -33,7 +37,9 @@ export class CommandeRepository {
     return document.populate([
       'fournisseur',
       { path: 'demandeur', select: 'nom prenom username tel type' },
+      'panne',
       'articles.equipement',
+      'articles.typeEquipement',
     ]);
   };
 
@@ -48,7 +54,9 @@ export class CommandeRepository {
     )
       .populate('fournisseur')
       .populate('demandeur', 'nom prenom username tel type')
-      .populate('articles.equipement');
+      .populate('panne')
+      .populate('articles.equipement')
+      .populate('articles.typeEquipement');
 
     return document ? document : null;
   };
@@ -70,7 +78,9 @@ export class CommandeRepository {
     )
       .populate('fournisseur')
       .populate('demandeur', 'nom prenom username tel type')
-      .populate('articles.equipement');
+      .populate('panne')
+      .populate('articles.equipement')
+      .populate('articles.typeEquipement');
 
     return document ? document : null;
   };
