@@ -102,7 +102,6 @@ export const pannePaths = {
                   example: ['Vérification des alimentations', 'Reconnexion'],
                 },
                 besoin_intervention: { type: 'boolean', example: true },
-                commande_liee: { type: 'string', description: 'ID MongoDB d\'une commande liée (optionnel)' },
               },
             },
           },
@@ -118,13 +117,13 @@ export const pannePaths = {
   '/pannes/{id}': {
     get: {
       tags: ['Pannes'],
-      summary: 'Obtenir les détails complets d\'une panne par ID',
+      summary: 'Obtenir les détails complets d\'une panne par ID (avec commandes rattachées)',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
       ],
       responses: {
-        200: { description: 'Détails de la panne avec déclarant et commande liée populés' },
+        200: { description: 'Détails de la panne avec déclarant et tableau des commandes rattachées' },
         404: { description: 'Panne non trouvée' },
       },
     },
@@ -158,7 +157,6 @@ export const pannePaths = {
                 impact_services: { type: 'array', items: { type: 'string', enum: ALL_IMPACT_SERVICES } },
                 tentatives_realisees: { type: 'array', items: { type: 'string', enum: ALL_TENTATIVES } },
                 besoin_intervention: { type: 'boolean' },
-                commande_liee: { type: 'string' },
               },
             },
           },

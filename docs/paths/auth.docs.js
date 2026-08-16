@@ -81,5 +81,30 @@ export const authPaths = {
         403: { description: 'Non autorisé (Admin requis)' }
       },
     }
-  }   
+  },
+
+  '/auth/logout': {
+    post: {
+      tags: ['Authentification'],
+      summary: 'Déconnexion de l\'utilisateur',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Déconnexion réussie',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Déconnexion réussie' }
+                }
+              }
+            }
+          }
+        },
+        401: { description: 'Non authentifié ou jeton invalide' }
+      }
+    }
+  }
 };

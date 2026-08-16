@@ -30,6 +30,7 @@ export const commandePaths = {
               properties: {
                 panne: { type: 'string', description: 'ID MongoDB de la panne liée à cette commande' },
                 fournisseur: { type: 'string', description: 'ID MongoDB du fournisseur' },
+                utiliserPrixCatalogue: { type: 'boolean', default: false, description: 'Optionnel. Si true, pré-remplit le prix unitaire des articles catalogue avec le dernier prix catalogue connu (si > 0).' },
                 articles: {
                   type: 'array',
                   minItems: 1,
@@ -84,10 +85,9 @@ export const commandePaths = {
             schema: {
               type: 'object',
               properties: {
-                pannes: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  minItems: 1,
+                panne: {
+                  type: 'string',
+                  description: 'ID de la panne liée',
                   nullable: true,
                 },
                 fournisseur: { type: 'string', nullable: true },
