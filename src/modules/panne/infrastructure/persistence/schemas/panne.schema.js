@@ -62,12 +62,6 @@ export const panneSchema = new mongoose.Schema(
       default: false,
     },
 
-    commande_liee: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Commande",
-      default: null,
-    },
-
     declarant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -63,6 +63,9 @@ export const createCommandeSchema = yup.object({
     .of(articleInputSchema)
     .min(1, "Une commande doit contenir au moins un article")
     .required("Le champ articles est requis"),
+  utiliserPrixCatalogue: yup
+    .boolean()
+    .default(false),
 });
 
 export const updateCommandeSchema = yup.object({

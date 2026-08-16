@@ -103,7 +103,6 @@ export const updatePanneSchema = yup.object({
     .array()
     .of(yup.string().oneOf(ALL_TENTATIVES, "tentative invalide")),
   besoin_intervention: yup.boolean(),
-  commande_liee: yup.string().trim(),
 });
 
 export const listPanneQuerySchema = yup.object({

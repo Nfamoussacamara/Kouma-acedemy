@@ -108,11 +108,11 @@ export class CommandeService {
 
       if (article.equipement) {
         const catalogItem = catalogMap.get(article.equipement.toString());
-        if (!article.prixUnitaire && catalogItem?.prix) {
-          prixUnitaire = catalogItem.prix;
-        }
         if (!designation && catalogItem?.designation) {
           designation = catalogItem.designation;
+        }
+        if (dto.utiliserPrixCatalogue === true && prixUnitaire === 0 && catalogItem?.prix) {
+          prixUnitaire = catalogItem.prix;
         }
       }
 
