@@ -17,6 +17,9 @@ export const equipementSchema = new mongoose.Schema(
     caracteristique: {
       type: String,
     },
+    modele: {
+      type: String,
+    },
     prix: {
       type: Number,
       default: 0,

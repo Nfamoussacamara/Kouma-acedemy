@@ -17,15 +17,25 @@ export const panneSchema = new mongoose.Schema(
     type_panne: {
       type: String,
       enum: TYPE_PANNE,
-      required: true,
     },
 
-    equipement: {
-      designation: { type: String, trim: true },
-      qte: { type: Number },
-      modele: { type: String, trim: true },
-    },
-
+    equipements: [
+      {
+        equipement: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Equipement",
+        },
+        designation: {
+          type: String,
+        },
+        quantite: {
+          type: Number,
+        },
+        modele: {
+          type: String,
+        },
+      },
+    ],
     systeme: {
       type: String,
       enum: SYSTEMES,

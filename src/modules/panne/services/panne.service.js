@@ -18,7 +18,28 @@ import {
   TENTATIVES_PAR_TYPE,
 } from "../panne.constants.js";
 
+import { EquipementRepository } from "../../equipement/repositories/equipement.repository.js";
+
 export class PanneService {
+  // Helper pour vérifier l'existence des équipements en base
+  static validateEquipementsExist = async (equipements = []) => {
+    if (!Array.isArray(equipements) || equipements.length === 0) return;
+
+    const catalogIds = equipements
+      .filter((e) => e.equipement)
+      .map((e) => e.equipement.toString());
+
+    if (catalogIds.length > 0) {
+      const foundEquipements = await EquipementRepository.getEquipementsByIds(catalogIds);
+      const foundIdsMap = new Set(foundEquipements.map((eq) => eq._id.toString()));
+
+      const missingIds = catalogIds.filter((id) => !foundIdsMap.has(id));
+      if (missingIds.length > 0) {
+        throw new NotFoundError(`Équipement(s) introuvable(s) dans le catalogue : ${missingIds.join(", ")}`);
+      }
+    }
+  };
+
   // Retourne les options du formulaire pour l'UI dynamique
   static getPanneFormOptions = () => {
     return {
@@ -94,6 +115,10 @@ export class PanneService {
   };
 
   static createPanne = async (dto, userId) => {
+    if (dto.equipements) {
+      await PanneService.validateEquipementsExist(dto.equipements);
+    }
+
     return PanneRepository.createPanne({
       ...dto,
       declarant: userId,
@@ -108,6 +133,10 @@ export class PanneService {
     const panne = await PanneRepository.getPanneById(id);
     if (!panne) {
       throw new NotFoundError(`Panne ${id} non trouvée`);
+    }
+
+    if (dto.equipements) {
+      await PanneService.validateEquipementsExist(dto.equipements);
     }
 
     const updated = await PanneRepository.updatePanne(id, dto);
