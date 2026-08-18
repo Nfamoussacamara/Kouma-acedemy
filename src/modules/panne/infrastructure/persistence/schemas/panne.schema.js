@@ -68,7 +68,6 @@ export const panneSchema = new mongoose.Schema(
 
     besoin_intervention: {
       type: Boolean,
-      required: true,
       default: false,
     },
 
