@@ -74,13 +74,17 @@ export const pannePaths = {
               properties: {
                 description: { type: 'string', example: 'Écran de l\'échographe qui clignote' },
                 type_panne: { type: 'string', enum: TYPE_PANNE, example: 'Équipement' },
-                equipement: {
-                  type: 'object',
-                  description: 'Requis si type_panne = Équipement',
-                  properties: {
-                    designation: { type: 'string', example: 'Échographe Doppler' },
-                    qte: { type: 'number', example: 1 },
-                    modele: { type: 'string', example: 'Mindray DC-70' },
+                equipements: {
+                  type: 'array',
+                  description: 'Requis si type_panne = Équipement. Liste d\'équipements impactés (ID catalogue OU désignation libre).',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      equipement: { type: 'string', description: 'ID MongoDB équipement catalogue (optionnel si designation renseignée)', nullable: true },
+                      designation: { type: 'string', description: 'Nom de l\'équipement si hors-catalogue (optionnel si equipement renseigné)', nullable: true },
+                      quantite: { type: 'integer', minimum: 1, default: 1 },
+                      modele: { type: 'string', nullable: true },
+                    },
                   },
                 },
                 systeme: {
@@ -143,12 +147,16 @@ export const pannePaths = {
               properties: {
                 description: { type: 'string' },
                 type_panne: { type: 'string', enum: TYPE_PANNE },
-                equipement: {
-                  type: 'object',
-                  properties: {
-                    designation: { type: 'string' },
-                    qte: { type: 'number' },
-                    modele: { type: 'string' },
+                equipements: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      equipement: { type: 'string', nullable: true },
+                      designation: { type: 'string', nullable: true },
+                      quantite: { type: 'integer', minimum: 1 },
+                      modele: { type: 'string', nullable: true },
+                    },
                   },
                 },
                 systeme: { type: 'string', enum: SYSTEMES },

@@ -200,12 +200,22 @@ Retourne la fiche complète d'une panne avec l'ensemble des commandes d'approvis
     "type_panne": "Équipement",
     "statut": "EN_ATTENTE_PIECE",
     "niveau_urgence": "Moyen",
-    "equipement": {
-      "designation": "Écran Dell 24 pouces",
-      "qte": 1,
-      "modele": "P2419H",
-      "numero_serie": "SN-DELL-98213"
-    },
+    "equipements": [
+      {
+        "equipement": {
+          "_id": "66bc30000000000000000001",
+          "designation": "Écran Dell 24 pouces",
+          "prix": 85000
+        },
+        "quantite": 2,
+        "modele": "P2419H"
+      },
+      {
+        "designation": "Imprimante HP LaserJet (Hors-Catalogue)",
+        "quantite": 1,
+        "modele": "M209dw"
+      }
+    ],
     "impact_services": ["Un service complet"],
     "tentatives_realisees": ["Reconnexion câbles", "Test autre prise"],
     "besoin_intervention": true,
@@ -237,14 +247,20 @@ Enregistre une nouvelle déclaration de panne dans le système.
 * **Corps de la requête (Body JSON) :**
 ```json
 {
-  "description": "L'écran principal de l'accueil clignote et s'éteint",
+  "description": "L'écran principal et l'imprimante du bureau d'accueil sont tombés en panne",
   "type_panne": "Équipement",
-  "equipement": {
-    "designation": "Écran Dell 24 pouces",
-    "qte": 1,
-    "modele": "P2419H",
-    "numero_serie": "SN-DELL-98213"
-  },
+  "equipements": [
+    {
+      "equipement": "66bc30000000000000000001",
+      "quantite": 2,
+      "modele": "P2419H"
+    },
+    {
+      "designation": "Imprimante HP LaserJet 2000",
+      "quantite": 1,
+      "modele": "M209dw"
+    }
+  ],
   "niveau_urgence": "Moyen",
   "impact_services": ["Un service complet"],
   "tentatives_realisees": ["Reconnexion câbles"],

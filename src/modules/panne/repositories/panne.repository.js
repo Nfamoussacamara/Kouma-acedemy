@@ -6,6 +6,11 @@ export class PanneRepository {
     return Promise.all([
       PanneModel.find(finalFilter)
         .populate("declarant", "nom prenom username tel type")
+        .populate({
+          path: "equipements.equipement",
+          select: "designation type fournisseur prix caracteristique",
+          populate: { path: "type", select: "nom" },
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -16,7 +21,12 @@ export class PanneRepository {
 
   static getPanneById = async (id) => {
     const document = await PanneModel.findOne({ _id: id, deletedAt: null })
-      .populate("declarant", "nom prenom username tel type");
+      .populate("declarant", "nom prenom username tel type")
+      .populate({
+        path: "equipements.equipement",
+        select: "designation type fournisseur prix caracteristique",
+        populate: { path: "type", select: "nom" },
+      });
     return document ? document : null;
   };
 
@@ -24,6 +34,10 @@ export class PanneRepository {
     const document = await PanneModel.create(dto);
     return document.populate([
       { path: "declarant", select: "nom prenom username tel type" },
+      {
+        path: "equipements.equipement",
+        select: "designation type fournisseur prix caracteristique",
+      },
     ]);
   };
 
@@ -33,7 +47,11 @@ export class PanneRepository {
       payload,
       { new: true, runValidators: true }
     )
-      .populate("declarant", "nom prenom username tel type");
+      .populate("declarant", "nom prenom username tel type")
+      .populate({
+        path: "equipements.equipement",
+        select: "designation type fournisseur prix caracteristique",
+      });
     return document ? document : null;
   };
 
@@ -51,7 +69,11 @@ export class PanneRepository {
       { statut },
       { new: true, runValidators: true }
     )
-      .populate("declarant", "nom prenom username tel type");
+      .populate("declarant", "nom prenom username tel type")
+      .populate({
+        path: "equipements.equipement",
+        select: "designation type fournisseur prix caracteristique",
+      });
     return document ? document : null;
   };
 }

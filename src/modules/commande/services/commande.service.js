@@ -278,6 +278,7 @@ export class CommandeService {
           designation: targetArticle.designation || "Équipement Réceptionné",
           type: targetArticle.typeEquipement,
           fournisseur: commande.fournisseur,
+          modele: targetArticle.modele || null,
           prix: item.prixUnitaire ?? targetArticle.prixUnitaire ?? 0,
         });
 

@@ -1,10 +1,7 @@
 import { ValidationError } from '../shared/errors/AppError.js';
+import { ValidationError as YupValidationError } from 'yup';
 
-/**
- * Valide req.body, req.query, ou req.params contre un schéma Yup.
- * @param {import('yup').Schema} schema
- * @param {'body'|'query'|'params'} source
- */
+
 export function validate(schema, source = 'body') {
   return async (req, _res, next) => {
     try {
@@ -15,18 +12,15 @@ export function validate(schema, source = 'body') {
       req[source] = validatedValue;
       next();
     } catch (error) {
-      if (error.name === 'ValidationError') {
-        const details = error.inner.map((err) => ({
-          field: err.path || '',
-          message: err.message,
-        }));
-        return next(new ValidationError('Validation échouée', details));
+      if (error instanceof YupValidationError) {
+        // Convertit l'erreur Yup en ValidationError (400 BAD_REQUEST)
+        return next(new ValidationError(error.errors[0]));
       }
-      next(error);
+      return next(error);
     }
   };
 }
 
-export const validateBody = (schema) => validate(schema, 'body'); 
+export const validateBody = (schema) => validate(schema, 'body');
 export const validateQuery = (schema) => validate(schema, 'query');
 export const validateParams = (schema) => validate(schema, 'params');

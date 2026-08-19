@@ -20,6 +20,7 @@ export const createEquipementSchema = yup.object({
     .optional()
     .nullable(),
   caracteristique: yup.string().trim().nullable(),
+  modele: yup.string().trim().optional().nullable(),
   prix: yup
     .number()
     .typeError("Le prix doit être un nombre")
@@ -39,6 +40,7 @@ export const updateEquipementSchema = yup.object({
       "Le fournisseur doit être un identifiant de base de données valide",
     ),
   caracteristique: yup.string().trim().nullable(),
+  modele: yup.string().trim().optional().nullable(),
   prix: yup
     .number()
     .typeError("Le prix doit être un nombre")

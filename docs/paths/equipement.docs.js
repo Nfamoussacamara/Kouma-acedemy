@@ -32,6 +32,7 @@ export const equipementPaths = {
                  type: { type: 'string', description: 'ID du type d\'équipement' },
                  fournisseur: { type: 'string', description: 'ID du fournisseur (optionnel)', nullable: true },
                  caracteristique: { type: 'string', nullable: true },
+                 modele: { type: 'string', description: 'Modèle ou référence de l\'équipement (optionnel)', nullable: true },
                  prix: { type: 'number', default: 0 },
                }
              }
