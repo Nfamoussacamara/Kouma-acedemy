@@ -1,4 +1,5 @@
 import * as yup from "yup";
+
 import {
   TYPE_PANNE,
   NIVEAU_URGENCE,
@@ -10,37 +11,137 @@ import {
 
 const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 
-const equipementLigneSchema = yup
+
+// =====================================================
+// Ligne équipement — CRÉATION
+// =====================================================
+
+const createEquipementLigneSchema = yup
   .object({
     equipement: yup
       .string()
       .trim()
-      .matches(objectIdRegex, "Format d'identifiant d'équipement invalide")
+      .matches(
+        objectIdRegex,
+        "Format d'identifiant d'équipement invalide"
+      )
       .nullable()
       .optional(),
-    designation: yup.string().trim().nullable().optional(),
+
+    designation: yup
+      .string()
+      .trim()
+      .nullable()
+      .optional(),
+
     quantite: yup
       .number()
       .typeError("La quantité doit être un nombre")
       .integer("La quantité doit être un entier")
       .min(1, "La quantité doit être supérieure ou égale à 1")
       .required("La quantité est obligatoire"),
-    modele: yup.string().trim().nullable().optional(),
+
+    modele: yup
+      .string()
+      .trim()
+      .nullable()
+      .optional(),
+
     traitement: yup
       .string()
-      .oneOf(["REMPLACEMENT", "REPARATION"], "traitement invalide : doit être REMPLACEMENT ou REPARATION")
+      .trim()
+      .transform((val) => (typeof val === "string" ? val.toUpperCase() : val))
+      .oneOf(
+        ["REMPLACEMENT", "REPARATION"],
+        "Le traitement doit être REMPLACEMENT ou REPARATION"
+      )
+      .default("REMPLACEMENT"),
+  })
+  .test(
+    "equipement-ou-designation",
+    "Un équipement doit être sélectionné dans le catalogue ou décrit manuellement",
+    (item) => {
+      if (!item) return false;
+
+      // Équipement présent dans le catalogue
+      if (item.equipement) {
+        return true;
+      }
+
+      // Équipement hors catalogue
+      return Boolean(
+        item.designation?.trim()
+      );
+    }
+  );
+
+
+// =====================================================
+// Ligne équipement — MODIFICATION
+// =====================================================
+
+const updateEquipementLigneSchema = yup
+  .object({
+    equipement: yup
+      .string()
+      .trim()
+      .matches(
+        objectIdRegex,
+        "Format d'identifiant d'équipement invalide"
+      )
+      .nullable()
+      .optional(),
+
+    designation: yup
+      .string()
+      .trim()
+      .nullable()
+      .optional(),
+
+    quantite: yup
+      .number()
+      .typeError("La quantité doit être un nombre")
+      .integer("La quantité doit être un entier")
+      .min(1, "La quantité doit être supérieure ou égale à 1")
+      .optional(),
+
+    modele: yup
+      .string()
+      .trim()
+      .nullable()
+      .optional(),
+
+    traitement: yup
+      .string()
+      .trim()
+      .transform((val) => (typeof val === "string" ? val.toUpperCase() : val))
+      .oneOf(
+        ["REMPLACEMENT", "REPARATION"],
+        "Le traitement doit être REMPLACEMENT ou REPARATION"
+      )
+      .nullable()
       .optional(),
   })
   .test(
-    "designation-requise-si-hors-catalogue",
-    "La désignation est obligatoire pour un équipement hors-catalogue (non référencé dans le catalogue)",
+    "equipement-ou-designation",
+    "Un équipement doit être sélectionné dans le catalogue ou décrit manuellement",
     (item) => {
-      // Si un ID catalogue est fourni → designation non requise
-      if (item?.equipement) return true;
-      // Sinon (hors-catalogue) → designation obligatoire
-      return !!(item?.designation && item.designation.trim().length > 0);
+      if (!item) return true;
+
+      if (item.equipement) {
+        return true;
+      }
+
+      // En update, si on fournit une nouvelle ligne hors catalogue,
+      // il faut pouvoir l'identifier.
+      return !item.designation || item.designation.trim().length > 0;
     }
   );
+
+
+// =====================================================
+// CRÉATION D'UNE PANNE
+// =====================================================
 
 export const createPanneSchema = yup.object({
   description: yup
@@ -54,75 +155,219 @@ export const createPanneSchema = yup.object({
     .required("Le champ type_panne est requis"),
 
   equipements: yup.array().when("type_panne", {
-    is: "Équipement",
+    is: "Equipement",
+
     then: (schema) =>
       schema
-        .of(equipementLigneSchema)
-        .min(1, "Au moins un équipement doit être renseigné pour une panne d'Équipement")
-        .required("Le champ equipements est requis pour une panne d'Équipement"),
+        .of(createEquipementLigneSchema)
+        .min(
+          1,
+          "Au moins un équipement doit être renseigné pour une panne d'Équipement"
+        )
+        .required(
+          "Le champ equipements est requis pour une panne d'Équipement"
+        ),
+
     otherwise: (schema) =>
-      schema.of(equipementLigneSchema).nullable().optional(),
+      schema
+        .of(createEquipementLigneSchema)
+        .nullable()
+        .optional(),
   }),
 
   systeme: yup.string().when("type_panne", {
     is: "Espace/Système",
+
     then: (schema) =>
       schema
         .oneOf(SYSTEMES, "systeme invalide")
         .required(
           "Le champ systeme est requis pour une panne d'Espace/Système"
         ),
-    otherwise: (schema) => schema.oneOf(SYSTEMES, "systeme invalide"),
+
+    otherwise: (schema) =>
+      schema
+        .oneOf(SYSTEMES, "systeme invalide")
+        .nullable()
+        .optional(),
   }),
 
-  cause: yup.string().trim(),
+  cause: yup
+    .string()
+    .trim()
+    .nullable()
+    .optional(),
 
   niveau_urgence: yup
     .string()
-    .oneOf(NIVEAU_URGENCE, "niveau_urgence invalide")
-    .required("Le champ niveau_urgence est requis"),
+    .oneOf(
+      NIVEAU_URGENCE,
+      "niveau_urgence invalide"
+    )
+    .required(
+      "Le champ niveau_urgence est requis"
+    ),
 
   impact_services: yup
     .array()
-    .of(yup.string().oneOf(ALL_IMPACT_SERVICES, "impact_service invalide")),
+    .of(
+      yup
+        .string()
+        .oneOf(
+          ALL_IMPACT_SERVICES,
+          "impact_service invalide"
+        )
+    )
+    .optional(),
 
   tentatives_realisees: yup
     .array()
-    .of(yup.string().oneOf(ALL_TENTATIVES, "tentative invalide")),
+    .of(
+      yup
+        .string()
+        .oneOf(
+          ALL_TENTATIVES,
+          "tentative invalide"
+        )
+    )
+    .optional(),
 
   besoin_intervention: yup
     .boolean()
-    .required("Le champ besoin_intervention est requis"),
+    .required(
+      "Le champ besoin_intervention est requis"
+    ),
 });
+
+
+// =====================================================
+// MODIFICATION D'UNE PANNE
+// =====================================================
 
 export const updatePanneSchema = yup.object({
-  description: yup.string().trim(),
-  type_panne: yup.string().oneOf(TYPE_PANNE, "type_panne invalide"),
-  equipements: yup.array().of(equipementLigneSchema).optional(),
-  systeme: yup.string().oneOf(SYSTEMES, "systeme invalide"),
-  cause: yup.string().trim(),
-  niveau_urgence: yup.string().oneOf(NIVEAU_URGENCE, "niveau_urgence invalide"),
+  description: yup
+    .string()
+    .trim()
+    .optional(),
+
+  type_panne: yup
+    .string()
+    .oneOf(
+      TYPE_PANNE,
+      "type_panne invalide"
+    )
+    .optional(),
+
+  equipements: yup
+    .array()
+    .of(updateEquipementLigneSchema)
+    .optional(),
+
+  systeme: yup
+    .string()
+    .oneOf(
+      SYSTEMES,
+      "systeme invalide"
+    )
+    .nullable()
+    .optional(),
+
+  cause: yup
+    .string()
+    .trim()
+    .nullable()
+    .optional(),
+
+  niveau_urgence: yup
+    .string()
+    .oneOf(
+      NIVEAU_URGENCE,
+      "niveau_urgence invalide"
+    )
+    .optional(),
+
   impact_services: yup
     .array()
-    .of(yup.string().oneOf(ALL_IMPACT_SERVICES, "impact_service invalide")),
+    .of(
+      yup
+        .string()
+        .oneOf(
+          ALL_IMPACT_SERVICES,
+          "impact_service invalide"
+        )
+    )
+    .optional(),
+
   tentatives_realisees: yup
     .array()
-    .of(yup.string().oneOf(ALL_TENTATIVES, "tentative invalide")),
-  besoin_intervention: yup.boolean(),
+    .of(
+      yup
+        .string()
+        .oneOf(
+          ALL_TENTATIVES,
+          "tentative invalide"
+        )
+    )
+    .optional(),
+
+  besoin_intervention: yup
+    .boolean()
+    .optional(),
 });
 
+
+// =====================================================
+// FILTRE DES PANNES
+// =====================================================
+
 export const listPanneQuerySchema = yup.object({
-  page: yup.number().integer().min(1).default(1),
-  limit: yup.number().integer().min(1).max(100).default(20),
-  niveau_urgence: yup.string().oneOf(NIVEAU_URGENCE),
-  type_panne: yup.string().oneOf(TYPE_PANNE),
-  besoin_intervention: yup.boolean(),
-  statut: yup.string().oneOf(VALID_QUERY_STATUTS),
+  page: yup
+    .number()
+    .integer()
+    .min(1)
+    .default(1),
+
+  limit: yup
+    .number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(20),
+
+  niveau_urgence: yup
+    .string()
+    .oneOf(NIVEAU_URGENCE)
+    .optional(),
+
+  type_panne: yup
+    .string()
+    .oneOf(TYPE_PANNE)
+    .optional(),
+
+  besoin_intervention: yup
+    .boolean()
+    .optional(),
+
+  statut: yup
+    .string()
+    .oneOf(
+      VALID_QUERY_STATUTS,
+      "statut invalide"
+    )
+    .optional(),
 });
+
+
+// =====================================================
+// CHANGEMENT DE STATUT
+// =====================================================
 
 export const toggleStatutSchema = yup.object({
   statut: yup
     .string()
-    .oneOf(VALID_QUERY_STATUTS, "statut invalide")
+    .oneOf(
+      VALID_QUERY_STATUTS,
+      "statut invalide"
+    )
     .required("Le champ statut est requis"),
 });

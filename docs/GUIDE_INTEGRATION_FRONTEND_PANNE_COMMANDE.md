@@ -113,25 +113,45 @@ Permet de récupérer les listes d'énumérations pour alimenter dynamiquement l
 {
   "success": true,
   "data": {
-    "types_panne": ["Équipement", "Espace/Système"],
+    "types_panne": ["Equipement", "Espace/Système"],
     "niveaux_urgence": ["Faible", "Moyen", "Élevé", "Critique"],
     "statuts": [
-      "NOUVELLE",
-      "PRISE_EN_CHARGE",
-      "EN_DIAGNOSTIC",
-      "EN_ATTENTE_PIECE",
-      "RESOLUE",
-      "CLOTUREE",
-      "REJETEE"
+      "nouvelle",
+      "en_cours",
+      "resolue",
+      "cloturee"
     ],
-    "impacts_services": [
-      "Aucun",
-      "Léger ralentissement",
-      "Un service complet",
-      "Plusieurs services",
-      "Serveur dysfonctionnel"
-    ],
-    "types_espace": ["Salle", "Bureau", "Laboratoire", "Couloir", "Autre"]
+    "impacts_par_type": {
+      "Equipement": [
+        "Aucun impact",
+        "Un service complet",
+        "Arrêt des soins",
+        "Autres"
+      ],
+      "Espace/Système": [
+        "Serveur dysfonctionnel",
+        "BE dysfonctionnel",
+        "Un service complet",
+        "Plusieurs services",
+        "Arrêt des soins",
+        "Autres"
+      ]
+    },
+    "tentatives_par_type": {
+      "Equipement": [
+        "Redémarrage des équipements",
+        "Vérification des alimentations",
+        "Nettoyage",
+        "Reconnexion",
+        "Aucune"
+      ],
+      "Espace/Système": [
+        "Vérification réseau",
+        "Redémarrage des équipements",
+        "Reconnexion",
+        "Aucune"
+      ]
+    }
   }
 }
 ```
@@ -149,7 +169,7 @@ Retourne la liste paginée des tickets de panne selon les critères de recherche
   - `search` *(string)* — Recherche textuelle sur le numéro, la description ou la désignation.
   - `statut` *(string)* — Filtre par statut (`NOUVELLE`, `EN_COURS`, etc.).
   - `niveau_urgence` *(string)* — Filtre par urgence (`Faible`, `Moyen`, `Élevé`, `Critique`).
-  - `type_panne` *(string)* — `Équipement` ou `Espace/Système`.
+  - `type_panne` *(string)* — `Equipement` ou `Espace/Système`.
   - `date_debut` / `date_fin` *(string ISO)* — Intervalle de dates.
 
 * **Réponse HTTP :** `200 OK`
@@ -159,16 +179,15 @@ Retourne la liste paginée des tickets de panne selon les critères de recherche
   "data": [
     {
       "_id": "66c011111111111111111111",
-      "numero": "PAN-202608-0001",
       "description": "L'écran principal scintille et s'éteint",
-      "type_panne": "Équipement",
+      "type_panne": "Equipement",
       "statut": "NOUVELLE",
       "niveau_urgence": "Moyen",
       "declarant": {
         "_id": "66a010000000000000000001",
         "nom": "Dupont",
         "prenom": "Jean",
-        "email": "jean.dupont@kouma.com"
+        "username": "moussa"
       },
       "createdAt": "2026-08-16T14:00:00.000Z"
     }
@@ -195,10 +214,9 @@ Retourne la fiche complète d'une panne avec l'ensemble des commandes d'approvis
   "success": true,
   "data": {
     "_id": "66c011111111111111111111",
-    "numero": "PAN-202608-0001",
     "description": "L'écran principal de l'accueil clignote et s'éteint",
-    "type_panne": "Équipement",
-    "statut": "EN_ATTENTE_PIECE",
+    "type_panne": "Equipement",
+    "statut": "EN_COURS",
     "niveau_urgence": "Moyen",
     "equipements": [
       {
@@ -208,12 +226,14 @@ Retourne la fiche complète d'une panne avec l'ensemble des commandes d'approvis
           "prix": 85000
         },
         "quantite": 2,
-        "modele": "P2419H"
+        "modele": "P2419H",
+        "traitement": "REMPLACEMENT"
       },
       {
         "designation": "Imprimante HP LaserJet (Hors-Catalogue)",
         "quantite": 1,
-        "modele": "M209dw"
+        "modele": "M209dw",
+        "traitement": "REPARATION"
       }
     ],
     "impact_services": ["Un service complet"],
@@ -242,31 +262,86 @@ Retourne la fiche complète d'une panne avec l'ensemble des commandes d'approvis
 ### 3.4 `POST /api/v1/pannes` — Déclarer une Nouvelle Panne
 Enregistre une nouvelle déclaration de panne dans le système.
 
-* **Authentification :** Requise (Rôle `Admin`)
-* **Méthode :** `POST`
-* **Corps de la requête (Body JSON) :**
+Le champ `equipements` prend en charge **2 manières de sélectionner un équipement** (pouvant être combinées dans le même tableau) :
+
+---
+
+#### 🔹 Méthode 1 : Équipement sélectionné depuis le Catalogue (Base de données)
+Utilisée lorsque l'équipement existe déjà dans le catalogue de l'application.
+
+* **Payload JSON :**
 ```json
 {
-  "description": "L'écran principal et l'imprimante du bureau d'accueil sont tombés en panne",
-  "type_panne": "Équipement",
+  "description": "Panne de l'écran principal du bureau d'accueil",
+  "type_panne": "Equipement",
+  "niveau_urgence": "Moyen",
+  "besoin_intervention": true,
   "equipements": [
     {
-      "equipement": "66bc30000000000000000001",
-      "quantite": 2,
-      "modele": "P2419H"
-    },
-    {
-      "designation": "Imprimante HP LaserJet 2000",
+      "equipement": "66bc30000000000000000001", // 👈 ID MongoDB de l'équipement catalogue (designation auto-associée)
       "quantite": 1,
-      "modele": "M209dw"
+      "modele": "P2419H",                      // 👈 Optionnel : modèle spécifique constaté sur place
+      "traitement": "REMPLACEMENT"            // 👈 "REMPLACEMENT" (défaut) ou "REPARATION"
     }
   ],
-  "niveau_urgence": "Moyen",
   "impact_services": ["Un service complet"],
-  "tentatives_realisees": ["Reconnexion câbles"],
-  "besoin_intervention": true
+  "tentatives_realisees": ["Redémarrage des équipements"]
 }
 ```
+
+---
+
+#### 🔹 Méthode 2 : Équipement Hors-Catalogue (Saisie Libre)
+Utilisée lorsque le matériel physique tombé en panne **n'existe pas encore** dans le catalogue.
+
+* **Payload JSON :**
+```json
+{
+  "description": "Imprimante thermique de caisse en panne",
+  "type_panne": "Equipement",
+  "niveau_urgence": "Élevé",
+  "besoin_intervention": true,
+  "equipements": [
+    {
+      "designation": "Imprimante thermique Epson TM-T20", // 👈 OBLIGATOIRE si equipement n'est pas fourni
+      "quantite": 1,
+      "modele": "TM-T20III",                             // 👈 Optionnel
+      "traitement": "REPARATION"                         // 👈 "REPARATION" ou "REMPLACEMENT"
+    }
+  ],
+  "impact_services": ["Un service complet"]
+}
+```
+
+---
+
+#### 🔹 Méthode 3 : Déclaration Mixte (Catalogue + Hors-Catalogue)
+Vous pouvez déclarer simultanément plusieurs équipements dans une même panne (certains du catalogue, certains en saisie libre) :
+
+* **Payload JSON :**
+```json
+{
+  "description": "Orage ayant endommagé le poste d'accueil",
+  "type_panne": "Equipement",
+  "niveau_urgence": "Critique",
+  "besoin_intervention": true,
+  "equipements": [
+    {
+      "equipement": "66bc30000000000000000001", // 1. Catalogue DB
+      "quantite": 2,
+      "modele": "P2419H",
+      "traitement": "REMPLACEMENT"
+    },
+    {
+      "designation": "Onduleur APC 1500VA",       // 2. Hors-Catalogue (saisie libre)
+      "quantite": 1,
+      "modele": "Smart-UPS",
+      "traitement": "REPARATION"
+    }
+  ]
+}
+```
+
 * **Réponse HTTP :** `201 Created`
 ```json
 {
@@ -274,7 +349,26 @@ Enregistre une nouvelle déclaration de panne dans le système.
   "message": "Panne créée avec succès",
   "data": {
     "_id": "66c011111111111111111111",
-    "numero": "PAN-202608-0001",
+    "description": "Orage ayant endommagé le poste d'accueil",
+    "type_panne": "Equipement",
+    "equipements": [
+      {
+        "equipement": {
+          "_id": "66bc30000000000000000001",
+          "designation": "Écran Dell 24 pouces",
+          "prix": 85000
+        },
+        "quantite": 2,
+        "modele": "P2419H",
+        "traitement": "REMPLACEMENT"
+      },
+      {
+        "designation": "Onduleur APC 1500VA",
+        "quantite": 1,
+        "modele": "Smart-UPS",
+        "traitement": "REPARATION"
+      }
+    ],
     "statut": "NOUVELLE"
   }
 }
