@@ -24,13 +24,22 @@ const equipementLigneSchema = yup
       .typeError("La quantité doit être un nombre")
       .integer("La quantité doit être un entier")
       .min(1, "La quantité doit être supérieure ou égale à 1")
-      .default(1),
+      .required("La quantité est obligatoire"),
     modele: yup.string().trim().nullable().optional(),
+    traitement: yup
+      .string()
+      .oneOf(["REMPLACEMENT", "REPARATION"], "traitement invalide : doit être REMPLACEMENT ou REPARATION")
+      .optional(),
   })
   .test(
-    "equipement-ou-designation",
-    "Chaque article d'équipement doit référencer soit un équipement catalogue (equipement), soit une désignation (designation)",
-    (item) => !!(item?.equipement || item?.designation)
+    "designation-requise-si-hors-catalogue",
+    "La désignation est obligatoire pour un équipement hors-catalogue (non référencé dans le catalogue)",
+    (item) => {
+      // Si un ID catalogue est fourni → designation non requise
+      if (item?.equipement) return true;
+      // Sinon (hors-catalogue) → designation obligatoire
+      return !!(item?.designation && item.designation.trim().length > 0);
+    }
   );
 
 export const createPanneSchema = yup.object({

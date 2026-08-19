@@ -22,9 +22,8 @@ export class UnauthorizedError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  constructor(message = 'Validation échouée', details = []) {
-    super(message, 400, 'VALIDATION_ERROR');
-    this.details = details;
+  constructor(message) {
+    super(message, 400, 'BAD_REQUEST');
   }
 }
 

@@ -34,6 +34,12 @@ export const panneSchema = new mongoose.Schema(
         modele: {
           type: String,
         },
+
+        traitement: {
+          type: String,
+          enum: ["REMPLACEMENT", "REPARATION"],
+          default: "REMPLACEMENT",
+        },
       },
     ],
     systeme: {
