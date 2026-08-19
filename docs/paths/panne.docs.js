@@ -73,7 +73,7 @@ export const pannePaths = {
               required: ['description', 'type_panne', 'niveau_urgence', 'besoin_intervention'],
               properties: {
                 description: { type: 'string', example: 'Écran de l\'échographe qui clignote' },
-                type_panne: { type: 'string', enum: TYPE_PANNE, example: 'Équipement' },
+                type_panne: { type: 'string', enum: TYPE_PANNE, example: 'Equipement' },
                 equipements: {
                   type: 'array',
                   description: 'Requis si type_panne = Équipement. Liste d\'équipements impactés (ID catalogue OU désignation libre).',

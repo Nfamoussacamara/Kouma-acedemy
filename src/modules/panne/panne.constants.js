@@ -1,4 +1,4 @@
-export const TYPE_PANNE = ["Équipement", "Espace/Système"];
+export const TYPE_PANNE = ["Equipement", "Espace/Système"];
 
 export const NIVEAU_URGENCE = ["Faible", "Moyen", "Élevé", "Critique"];
 
@@ -26,7 +26,7 @@ export const STATUS_MAP = {
 };
 
 export const IMPACTS_PAR_TYPE = {
-  "Équipement": [
+  "Equipement": [
     "Aucun impact",
     "Un service complet",
     "Arrêt des soins",
@@ -53,7 +53,7 @@ export const ALL_IMPACT_SERVICES = [
 ];
 
 export const TENTATIVES_PAR_TYPE = {
-  "Équipement": [
+  "Equipement": [
     "Redémarrage des équipements",
     "Vérification des alimentations",
     "Nettoyage",
