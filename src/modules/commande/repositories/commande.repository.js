@@ -10,6 +10,8 @@ export class CommandeRepository {
         .populate('panne')
         .populate('articles.equipement')
         .populate('articles.typeEquipement')
+        .populate('receptions.receptionnePar', 'nom prenom username tel type')
+        .populate('receptions.articlesRecus.equipement')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -24,7 +26,9 @@ export class CommandeRepository {
       .populate('demandeur', 'nom prenom username tel type')
       .populate('panne')
       .populate('articles.equipement')
-      .populate('articles.typeEquipement');
+      .populate('articles.typeEquipement')
+      .populate('receptions.receptionnePar', 'nom prenom username tel type')
+      .populate('receptions.articlesRecus.equipement');
     return document ? document : null;
   };
 
@@ -56,7 +60,9 @@ export class CommandeRepository {
       .populate('demandeur', 'nom prenom username tel type')
       .populate('panne')
       .populate('articles.equipement')
-      .populate('articles.typeEquipement');
+      .populate('articles.typeEquipement')
+      .populate('receptions.receptionnePar', 'nom prenom username tel type')
+      .populate('receptions.articlesRecus.equipement');
 
     return document ? document : null;
   };
@@ -80,7 +86,9 @@ export class CommandeRepository {
       .populate('demandeur', 'nom prenom username tel type')
       .populate('panne')
       .populate('articles.equipement')
-      .populate('articles.typeEquipement');
+      .populate('articles.typeEquipement')
+      .populate('receptions.receptionnePar', 'nom prenom username tel type')
+      .populate('receptions.articlesRecus.equipement');
 
     return document ? document : null;
   };
