@@ -73,7 +73,43 @@ export class CommandeService {
     return commande;
   };
 
-  static createCommande = async (dto, userId) => { 
+
+  static suggestEquipements = async (articles) => {
+
+    const results = await Promise.all(
+      articles
+        .filter((article) => !article.equipement)
+        .map(async (article) => {
+
+          if (!article.designation && !article.modele && !article.typeEquipement) {
+            return {
+              article,
+              suggestions: [],
+            };
+          }
+
+          const search = article.designation || article.modele;
+
+          const filter = {
+            ...createSearchFilter(search, ["designation", "modele"]),
+          };
+
+          if (article.typeEquipement && isValidObjectId(article.typeEquipement)) {
+            filter.type = article.typeEquipement;
+          }
+
+          const suggestions = await EquipementRepository.getEquipementsByDesignationOrModelOrType(filter);
+          return {
+            article,
+            suggestions,
+          };
+        })
+    );
+    return results;
+  };
+
+
+  static createCommande = async (dto, userId) => {
     if (!isValidObjectId(dto.panne)) {
       throw new ValidationError(`Identifiant de panne invalide : ${dto.panne}`);
     }

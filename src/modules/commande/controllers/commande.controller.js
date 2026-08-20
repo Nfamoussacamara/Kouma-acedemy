@@ -48,4 +48,12 @@ export class CommandeController {
       message: "Statut de la commande mis à jour avec succès",
     });
   });
+
+  
+  static suggestEquipements = asyncHandler(async (req, res) => {
+    const { articles } = req.body;
+    const results = await CommandeService.suggestEquipements(articles);
+
+    res.json({ success: true, data: results });
+  });
 }

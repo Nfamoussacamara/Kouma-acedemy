@@ -136,3 +136,28 @@ export const receptionCommandeSchema = yup.object({
     .min(1, "Veuillez fournir au moins un article réceptionné")
     .required("Le champ articlesRecus est requis"),
 });
+
+export const suggestEquipementsSchema = yup.object({
+  articles: yup
+    .array()
+    .of(
+      yup.object({
+        typeEquipement: yup
+          .string()
+          .trim()
+          .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
+          .nullable() 
+          .optional(),
+        designation: yup.string().trim().nullable().optional(),
+        modele: yup.string().trim().nullable().optional(),
+      })
+      .test(
+        "article-non-vide",
+        "Un article doit contenir au moins une information (designation, modele ou type d'équipement)",
+        (article) => !!(article.designation || article.modele || article.typeEquipement)
+      )
+    )
+    .min(1, "Le tableau articles doit contenir au moins un élément")
+    .required("Le tableau articles est requis"),
+});
+

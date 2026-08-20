@@ -25,6 +25,18 @@ export class EquipementRepository {
     return EquipementModel.find({ _id: { $in: ids }, deletedAt: null });
   };
 
+  static getEquipementsByDesignationOrModelOrType = async (filter) => {
+    const finalFilter = {
+      ...filter,
+      deletedAt: null,
+    };
+    return EquipementModel.find(finalFilter)
+    .select("designation modele type fournisseur prix")
+    .populate("type", "nom")
+    .populate("fournisseur", "nom")
+    .lean();
+  };
+
   static createEquipement = async (dto) => {
     const document = await EquipementModel.create({
       designation: dto.designation,

@@ -9,7 +9,9 @@ import {
   updateCommandeSchema, 
   toggleStatusSchema, 
   listCommandeQuerySchema,
-  receptionCommandeSchema } from '../validators/commande.validator.js';
+  receptionCommandeSchema,
+  suggestEquipementsSchema
+} from '../validators/commande.validator.js';
 import { apiRateLimit } from '../../../middlewares/rate-limit.midleware.js';
 import { auditlogmidleware } from '../../../middlewares/logger.midleware.js';
 
@@ -76,6 +78,15 @@ export function createCommandeRoutes() {
     requireRole(['Admin']),
     validateParams(idParamSchema),
     CommandeController.deleteCommande
+  );
+
+  router.post(
+    "/suggestions-equipements",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateBody(suggestEquipementsSchema),
+    CommandeController.suggestEquipements
   );
 
   return router;
