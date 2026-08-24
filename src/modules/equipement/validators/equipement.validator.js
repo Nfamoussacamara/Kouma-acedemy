@@ -10,29 +10,8 @@ export const createEquipementSchema = yup.object({
   type: yup
     .string()
     .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
-    .required("Le type d'équipement est requis"),
-  fournisseur: yup
-    .string()
-    .matches(
-      objectIdRegex,
-      "Le fournisseur doit être un identifiant de base de données valide",
-    )
     .optional()
     .nullable(),
-  caracteristique: yup.string().trim().nullable(),
-  modele: yup.string().trim().optional().nullable(),
-  prix: yup
-    .number()
-    .typeError("Le prix doit être un nombre")
-    .positive("Le prix doit être supérieur à 0")
-    .required("Le prix est requis"),
-});
-
-export const updateEquipementSchema = yup.object({
-  designation: yup.string().trim(),
-  type: yup
-    .string()
-    .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide"),
   fournisseur: yup
     .string()
     .matches(
@@ -44,7 +23,41 @@ export const updateEquipementSchema = yup.object({
   prix: yup
     .number()
     .typeError("Le prix doit être un nombre")
-    .positive("Le prix doit être supérieur à 0"),
+    .positive("Le prix doit être supérieur à 0")
+    .optional()
+    .nullable(),
+});
+
+export const updateEquipementSchema = yup.object({
+  designation: yup
+    .string()
+    .trim(),
+  type: yup
+    .string()
+    .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
+    .optional()
+    .nullable(),
+  fournisseur: yup
+    .string()
+    .matches(
+      objectIdRegex,
+      "Le fournisseur doit être un identifiant de base de données valide",
+    ),
+  caracteristique: yup
+    .string()
+    .trim()
+    .nullable(),
+  modele: yup
+    .string()
+    .trim()
+    .optional()
+    .nullable(),
+  prix: yup
+    .number()
+    .typeError("Le prix doit être un nombre")
+    .positive("Le prix doit être supérieur à 0")
+    .optional()
+    .nullable(),
 });
 
 export const listEquipementsQuerySchema = yup.object({
