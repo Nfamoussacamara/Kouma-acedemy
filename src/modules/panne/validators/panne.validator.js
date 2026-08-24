@@ -7,14 +7,10 @@ import {
   VALID_QUERY_STATUTS,
   ALL_IMPACT_SERVICES,
   ALL_TENTATIVES,
+  STRUCTURE_SANITAIRE
 } from "../panne.constants.js";
 
 const objectIdRegex = /^[a-fA-F0-9]{24}$/;
-
-
-// =====================================================
-// Ligne équipement — CRÉATION
-// =====================================================
 
 const createEquipementLigneSchema = yup
   .object({
@@ -24,15 +20,7 @@ const createEquipementLigneSchema = yup
       .matches(
         objectIdRegex,
         "Format d'identifiant d'équipement invalide"
-      )
-      .nullable()
-      .optional(),
-
-    designation: yup
-      .string()
-      .trim()
-      .nullable()
-      .optional(),
+      ),
 
     quantite: yup
       .number()
@@ -57,28 +45,6 @@ const createEquipementLigneSchema = yup
       )
       .default("REMPLACEMENT"),
   })
-  .test(
-    "equipement-ou-designation",
-    "Un équipement doit être sélectionné dans le catalogue ou décrit manuellement",
-    (item) => {
-      if (!item) return false;
-
-      // Équipement présent dans le catalogue
-      if (item.equipement) {
-        return true;
-      }
-
-      // Équipement hors catalogue
-      return Boolean(
-        item.designation?.trim()
-      );
-    }
-  );
-
-
-// =====================================================
-// Ligne équipement — MODIFICATION
-// =====================================================
 
 const updateEquipementLigneSchema = yup
   .object({
@@ -88,15 +54,7 @@ const updateEquipementLigneSchema = yup
       .matches(
         objectIdRegex,
         "Format d'identifiant d'équipement invalide"
-      )
-      .nullable()
-      .optional(),
-
-    designation: yup
-      .string()
-      .trim()
-      .nullable()
-      .optional(),
+      ),
 
     quantite: yup
       .number()
@@ -121,29 +79,21 @@ const updateEquipementLigneSchema = yup
       )
       .nullable()
       .optional(),
+
+    structure_sanitaire: yup
+      .string()
+      .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
+      .required("Le champ structure_sanitaire est requis")
+      .transform((value) => value.toUpperCase()),
   })
-  .test(
-    "equipement-ou-designation",
-    "Un équipement doit être sélectionné dans le catalogue ou décrit manuellement",
-    (item) => {
-      if (!item) return true;
-
-      if (item.equipement) {
-        return true;
-      }
-
-      // En update, si on fournit une nouvelle ligne hors catalogue,
-      // il faut pouvoir l'identifier.
-      return !item.designation || item.designation.trim().length > 0;
-    }
-  );
-
-
-// =====================================================
-// CRÉATION D'UNE PANNE
-// =====================================================
 
 export const createPanneSchema = yup.object({
+  structure_sanitaire: yup
+    .string()
+    .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
+    .required("Le champ structure_sanitaire est requis")
+    .transform((value) => value.toUpperCase()),
+
   description: yup
     .string()
     .trim()
@@ -239,12 +189,14 @@ export const createPanneSchema = yup.object({
     ),
 });
 
-
-// =====================================================
-// MODIFICATION D'UNE PANNE
-// =====================================================
-
 export const updatePanneSchema = yup.object({
+
+  structure_sanitaire: yup
+    .string()
+    .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
+    .optional()
+    .transform((value) => value.toUpperCase()),
+
   description: yup
     .string()
     .trim()
@@ -315,11 +267,6 @@ export const updatePanneSchema = yup.object({
     .optional(),
 });
 
-
-// =====================================================
-// FILTRE DES PANNES
-// =====================================================
-
 export const listPanneQuerySchema = yup.object({
   page: yup
     .number()
@@ -356,11 +303,6 @@ export const listPanneQuerySchema = yup.object({
     )
     .optional(),
 });
-
-
-// =====================================================
-// CHANGEMENT DE STATUT
-// =====================================================
 
 export const toggleStatutSchema = yup.object({
   statut: yup

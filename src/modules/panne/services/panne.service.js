@@ -16,12 +16,14 @@ import {
   SYSTEMES,
   IMPACTS_PAR_TYPE,
   TENTATIVES_PAR_TYPE,
+  STRUCTURE_SANITAIRE,
 } from "../panne.constants.js";
-
+import { nextPanneReference } from "../services/counter.service.js";
 import { EquipementRepository } from "../../equipement/repositories/equipement.repository.js";
+import { removeUndefinedValues } from "../../../shared/utils/payload.util.js";
 
 export class PanneService {
-  // Helper pour vérifier l'existence des équipements en base
+
   static validateEquipementsExist = async (equipements = []) => {
     if (!Array.isArray(equipements) || equipements.length === 0) return;
 
@@ -38,18 +40,6 @@ export class PanneService {
         throw new NotFoundError(`Équipement(s) introuvable(s) dans le catalogue : ${missingIds.join(", ")}`);
       }
     }
-  };
-
-  // Retourne les options du formulaire pour l'UI dynamique
-  static getPanneFormOptions = () => {
-    return {
-      types_panne: TYPE_PANNE,
-      niveaux_urgence: NIVEAU_URGENCE,
-      systemes: SYSTEMES,
-      statuts: VALID_QUERY_STATUTS,
-      impacts_par_type: IMPACTS_PAR_TYPE,
-      tentatives_par_type: TENTATIVES_PAR_TYPE,
-    };
   };
 
   static listPannes = async (query = {}) => {
@@ -119,9 +109,12 @@ export class PanneService {
       await PanneService.validateEquipementsExist(dto.equipements);
     }
 
+    const reference = await nextPanneReference(dto.structure_sanitaire);
+
     return PanneRepository.createPanne({
       ...dto,
       declarant: userId,
+      reference,
     });
   };
 
@@ -135,11 +128,24 @@ export class PanneService {
       throw new NotFoundError(`Panne ${id} non trouvée`);
     }
 
-    if (dto.equipements) {
-      await PanneService.validateEquipementsExist(dto.equipements);
+    const cleanDto = removeUndefinedValues(dto);
+    if (Object.keys(cleanDto).length === 0) {
+      throw new ValidationError("Aucune donnée à mettre à jour");
     }
 
-    const updated = await PanneRepository.updatePanne(id, dto);
+    if (cleanDto.equipements) {
+      await PanneService.validateEquipementsExist(cleanDto.equipements);
+    }
+
+    let reference = panne.reference;
+    if (cleanDto.structure_sanitaire && cleanDto.structure_sanitaire !== panne.structure_sanitaire) {
+      reference = await nextPanneReference(cleanDto.structure_sanitaire);
+    }
+
+    const updated = await PanneRepository.updatePanne(id, {
+      ...cleanDto,
+      reference
+    });
     if (!updated) {
       throw new NotFoundError(`Panne ${id} non trouvée`);
     }

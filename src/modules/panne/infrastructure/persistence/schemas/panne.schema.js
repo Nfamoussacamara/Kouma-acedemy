@@ -6,10 +6,20 @@ import {
   ALL_IMPACT_SERVICES,
   ALL_TENTATIVES,
   STATUTS_PANNE,
+  STRUCTURE_SANITAIRE,
 } from "../../../panne.constants.js";
 
 export const panneSchema = new mongoose.Schema(
   {
+    reference:{
+      type : String
+    },
+
+    structure_sanitaire:{
+      type : String,
+      enum : STRUCTURE_SANITAIRE,
+    },
+ 
     description: {
       type: String,
     },
@@ -25,16 +35,9 @@ export const panneSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Equipement",
         },
-        designation: {
-          type: String,
-        },
         quantite: {
           type: Number,
         },
-        modele: {
-          type: String,
-        },
-
         traitement: {
           type: String,
           enum: ["REMPLACEMENT", "REPARATION"],
@@ -45,7 +48,7 @@ export const panneSchema = new mongoose.Schema(
     systeme: {
       type: String,
       enum: SYSTEMES,
-    },
+    }, 
 
     cause: {
       type: String,

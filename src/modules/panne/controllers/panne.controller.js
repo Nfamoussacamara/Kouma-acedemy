@@ -2,11 +2,6 @@ import { asyncHandler } from "../../../shared/errors/asyncHandler.js";
 import { PanneService } from "../services/panne.service.js";
 
 export class PanneController {
-  static getOptions = asyncHandler(async (_req, res) => {
-    const data = PanneService.getPanneFormOptions();
-    res.json({ success: true, data });
-  });
-
   static listPannes = asyncHandler(async (req, res) => {
     const result = await PanneService.listPannes(req.query);
     res.json({ success: true, ...result });
