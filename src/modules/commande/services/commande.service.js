@@ -12,36 +12,124 @@ import { EquipementService } from "../../equipement/services/equipement.service.
 import { PanneRepository } from "../../panne/repositories/panne.repository.js";
 import { CounterService } from "./counter.service.js";
 import { createSearchFilter } from "../../../shared/utils/search.util.js";
-import { CommandeModel } from "../infrastructure/persistence/models/Commande.model.js";
 
 const STATUS_MAP = {
-  "brouillon": "BROUILLON",
-  "emise": "EMISE",
-  "partiellement_recue": "PARTIELLEMENT_RECUE",
-  "recue": "RECUE",
-  "annulee": "ANNULEE",
-  "annulée": "ANNULEE",
+  brouillon: "BROUILLON",
+  emise: "EMISE",
+  partiellement_recue: "PARTIELLEMENT_RECUE",
+  recue: "RECUE",
+  annulee: "ANNULEE",
+  annulée: "ANNULEE",
 };
+
+function normalizeStatus(status) {
+  if (!status) {
+    throw new ValidationError("Le statut est obligatoire");
+  }
+  const key = String(status).toLowerCase().trim();
+  return STATUS_MAP[key] || String(status).toUpperCase();
+}
+
+function computeTotal(equipements) {
+  return (equipements || []).reduce(
+    (total, ligne) => total + ligne.quantiteCommandee * ligne.prixUnitaire,
+    0
+  );
+}
+async function loadCatalogMap(equipements, { strict = false } = {}) {
+  const equipementIds = (equipements || [])
+    .filter((e) => e.equipement)
+    .map((e) => e.equipement);
+
+  if (equipementIds.length === 0) {
+    return new Map();
+  }
+
+  const found = await EquipementRepository.getEquipementsByIds(equipementIds);
+  const catalogMap = new Map(found.map((eq) => [eq._id.toString(), eq]));
+
+  if (strict) {
+    const missingIds = equipementIds.filter(
+      (id) => !catalogMap.has(id.toString())
+    );
+    if (missingIds.length > 0) {
+      throw new NotFoundError(
+        `Équipement(s) introuvable(s) dans le catalogue : ${missingIds.join(", ")}`
+      );
+    }
+  }
+
+  return catalogMap;
+}
+
+function findExistingLine(existingEquipements, equipementDto) {
+  const targetId = equipementDto.equipement?.toString();
+  if (!targetId) return null;
+
+  return (existingEquipements || []).find((line) => {
+    if (!line.equipement) return false;
+    const lineId = line.equipement._id
+      ? line.equipement._id.toString()
+      : line.equipement.toString();
+    return lineId === targetId;
+  });
+}
+
+function buildEquipementLine(
+  equipementDto,
+  { catalogMap, existingLine = null, utiliserPrixCatalogue = false }
+) {
+  const catalogItem = catalogMap.get(equipementDto.equipement.toString());
+  const quantiteRecue = existingLine ? existingLine.quantiteRecue : 0;
+
+  if (
+    existingLine &&
+    quantiteRecue > 0 &&
+    equipementDto.prixUnitaire !== undefined &&
+    equipementDto.prixUnitaire !== existingLine.prixUnitaire
+  ) {
+    throw new ConflictError(
+      `Le prix de l'équipement est figé car des réceptions ont déjà eu lieu`
+    );
+  }
+
+  let prixUnitaire = equipementDto.prixUnitaire;
+  if (prixUnitaire === undefined || prixUnitaire === null) {
+    prixUnitaire = existingLine ? existingLine.prixUnitaire : 0;
+    if (
+      prixUnitaire === 0 &&
+      catalogItem?.prix &&
+      (utiliserPrixCatalogue || existingLine)
+    ) {
+      prixUnitaire = catalogItem.prix;
+    }
+  } else if (utiliserPrixCatalogue && prixUnitaire === 0 && catalogItem?.prix) {
+    prixUnitaire = catalogItem.prix;
+  }
+
+  return {
+    equipement: equipementDto.equipement,
+    quantiteCommandee: equipementDto.quantiteCommandee,
+    quantiteRecue,
+    prixUnitaire,
+  };
+}
 
 export class CommandeService {
   static listCommandes = async (query = {}) => {
     const { page, limit, skip } = getPagination(query);
     const searchFilter = createSearchFilter(query.search, [
-      "numero",
+      "reference",
       "fournisseur.nom",
       "demandeur.prenom",
       "demandeur.nom",
-      "articles.designation",
-      "articles.equipement.designation",
+      "equipements.equipement.designation",
     ]);
 
-    const filter = {
-      ...searchFilter,
-    };
+    const filter = { ...searchFilter };
 
     if (query.status) {
-      const statusKey = query.status.toLowerCase().trim();
-      filter.status = STATUS_MAP[statusKey] || query.status.toUpperCase();
+      filter.status = normalizeStatus(query.status);
     }
 
     if (query.fournisseur && isValidObjectId(query.fournisseur)) {
@@ -73,187 +161,88 @@ export class CommandeService {
     return commande;
   };
 
-
-  static suggestEquipements = async (articles) => {
-
-    const results = await Promise.all(
-      articles
-        .filter((article) => !article.equipement)
-        .map(async (article) => {
-
-          if (!article.designation && !article.modele && !article.typeEquipement) {
-            return {
-              article,
-              suggestions: [],
-            };
-          }
-
-          const search = article.designation || article.modele;
-
-          const filter = {
-            ...createSearchFilter(search, ["designation", "modele"]),
-          };
-
-          if (article.typeEquipement && isValidObjectId(article.typeEquipement)) {
-            filter.type = article.typeEquipement;
-          }
-
-          const suggestions = await EquipementRepository.getEquipementsByDesignationOrModelOrType(filter);
-          return {
-            article,
-            suggestions,
-          };
-        })
-    );
-    return results;
-  };
-
-
   static createCommande = async (dto, userId) => {
-    if (!isValidObjectId(dto.panne)) {
+    if (dto.panne && !isValidObjectId(dto.panne)) {
       throw new ValidationError(`Identifiant de panne invalide : ${dto.panne}`);
     }
-    const panne = await PanneRepository.getPanneById(dto.panne);
-    if (!panne) {
-      throw new NotFoundError(`Panne introuvable : ${dto.panne}`);
+
+    let panne = null;
+    if (dto.panne) {
+      panne = await PanneRepository.getPanneById(dto.panne);
+      if (!panne) {
+        throw new NotFoundError(`Panne introuvable : ${dto.panne}`);
+      }
     }
 
-    const fournisseur = await FournisseurRepository.getFournisseurById(dto.fournisseur);
+    const fournisseur = await FournisseurRepository.getFournisseurById(
+      dto.fournisseur
+    );
     if (!fournisseur) {
       throw new NotFoundError("Fournisseur introuvable");
     }
 
-    const catalogEquipementIds = dto.articles
-      .filter((a) => a.equipement)
-      .map((a) => a.equipement);
+    const catalogMap = await loadCatalogMap(dto.equipements, { strict: true });
 
-    let catalogMap = new Map();
-    if (catalogEquipementIds.length > 0) {
-      const foundEquipements = await EquipementRepository.getEquipementsByIds(catalogEquipementIds);
-      catalogMap = new Map(foundEquipements.map((eq) => [eq._id.toString(), eq]));
-
-      const missingIds = catalogEquipementIds.filter((id) => !catalogMap.has(id.toString()));
-      if (missingIds.length > 0) {
-        throw new NotFoundError(`Équipement(s) introuvable(s) dans le catalogue : ${missingIds.join(", ")}`);
-      }
-    }
-
-    const articles = dto.articles.map((article) => {
-      let prixUnitaire = article.prixUnitaire ?? 0;
-      let designation = article.designation;
-
-      if (article.equipement) {
-        const catalogItem = catalogMap.get(article.equipement.toString());
-        if (!designation && catalogItem?.designation) {
-          designation = catalogItem.designation;
-        }
-        if (dto.utiliserPrixCatalogue === true && prixUnitaire === 0 && catalogItem?.prix) {
-          prixUnitaire = catalogItem.prix;
-        }
-      }
-
-      return {
-        equipement: article.equipement || null,
-        typeEquipement: article.typeEquipement || null,
-        designation: designation || null,
-        quantiteCommandee: article.quantiteCommandee,
-        quantiteRecue: 0,
-        prixUnitaire,
-      };
-    });
-
-    const prixtotal = articles.reduce(
-      (acc, ligne) => acc + ligne.quantiteCommandee * ligne.prixUnitaire,
-      0
+    const equipements = dto.equipements.map((equipementDto) =>
+      buildEquipementLine(equipementDto, {
+        catalogMap,
+        utiliserPrixCatalogue: dto.utiliserPrixCatalogue === true,
+      })
     );
 
-    const numero = await CounterService.nextCommandeNumber();
-    const targetStatus = dto.status
-      ? STATUS_MAP[dto.status.toLowerCase().trim()] || "BROUILLON"
-      : "BROUILLON";
+    const reference = await CounterService.nextCommandeNumber();
+    const targetStatus = dto.status ? normalizeStatus(dto.status) : "BROUILLON";
 
     return CommandeRepository.createCommande({
-      numero,
-      panne: dto.panne,
+      reference,
+      panne: panne?._id || null,
       fournisseur: fournisseur._id,
       demandeur: userId,
-      articles,
+      equipements,
       status: targetStatus,
-      prixtotal,
+      prixtotal: computeTotal(equipements),
     });
   };
 
-  static updateCommande = async (id, dto, userId) => {
+  static updateCommande = async (id, dto) => {
     if (!isValidObjectId(id)) {
-      throw new ValidationError("ID de commande invalide");
+      throw new ValidationError(`Identifiant commande invalide : ${id}`);
     }
 
     const commande = await CommandeRepository.getCommandeById(id);
     if (!commande) {
-      throw new NotFoundError("Commande introuvable");
+      throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
     if (commande.status === "RECUE" || commande.status === "ANNULEE") {
-      throw new ConflictError(`Une commande au statut ${commande.status} ne peut plus être modifiée`);
+      throw new ConflictError(
+        `Une commande au statut ${commande.status} ne peut plus être modifiée`
+      );
     }
 
-    const fournisseurId = dto.fournisseur || commande.fournisseur?._id || commande.fournisseur;
-    const fournisseur = await FournisseurRepository.getFournisseurById(fournisseurId);
-    if (!fournisseur) {
-      throw new NotFoundError("Fournisseur introuvable");
-    }
-
-    let articles = commande.articles;
-    if (dto.articles && Array.isArray(dto.articles)) {
-      const catalogEquipementIds = dto.articles
-        .filter((a) => a.equipement)
-        .map((a) => a.equipement);
-
-      let catalogMap = new Map();
-      if (catalogEquipementIds.length > 0) {
-        const foundEquipements = await EquipementRepository.getEquipementsByIds(catalogEquipementIds);
-        catalogMap = new Map(foundEquipements.map((eq) => [eq._id.toString(), eq]));
-      }
-
-      articles = dto.articles.map((article) => {
-        const existingLine = (commande.articles || []).find(
-          (line) =>
-            (line.equipement && line.equipement._id?.toString() === article.equipement?.toString()) ||
-            (line.typeEquipement && line.typeEquipement._id?.toString() === article.typeEquipement?.toString())
-        );
-
-        let quantiteRecue = existingLine ? existingLine.quantiteRecue : 0;
-        let prixUnitaire = article.prixUnitaire;
-
-        if (existingLine && quantiteRecue > 0 && article.prixUnitaire !== undefined && article.prixUnitaire !== existingLine.prixUnitaire) {
-          throw new ConflictError(
-            `Le prix de l'article "${existingLine.designation || 'Équipement'}" est figé car des réceptions ont déjà eu lieu`
-          );
-        }
-
-        if (prixUnitaire === undefined || prixUnitaire === null) {
-          prixUnitaire = existingLine ? existingLine.prixUnitaire : 0;
-          if (prixUnitaire === 0 && article.equipement) {
-            const catalogItem = catalogMap.get(article.equipement.toString());
-            prixUnitaire = catalogItem?.prix || 0;
-          }
-        }
-
-        return {
-          equipement: article.equipement || existingLine?.equipement || null,
-          typeEquipement: article.typeEquipement || existingLine?.typeEquipement || null,
-          designation: article.designation || existingLine?.designation || null,
-          quantiteCommandee: article.quantiteCommandee,
-          quantiteRecue,
-          prixUnitaire,
-        };
-      });
-    }
-
-    const prixtotal = articles.reduce(
-      (acc, ligne) => acc + ligne.quantiteCommandee * ligne.prixUnitaire,
-      0
+    const fournisseurId =
+      dto.fournisseur || commande.fournisseur?._id || commande.fournisseur;
+    const fournisseur = await FournisseurRepository.getFournisseurById(
+      fournisseurId
     );
+    if (!fournisseur) {
+      throw new NotFoundError(`Fournisseur ${fournisseurId} non trouvé`);
+    }
+
+    let equipements = commande.equipements;
+    if (dto.equipements && Array.isArray(dto.equipements)) {
+      const catalogMap = await loadCatalogMap(dto.equipements, { strict: true });
+
+      equipements = dto.equipements.map((equipementDto) =>
+        buildEquipementLine(equipementDto, {
+          catalogMap,
+          existingLine: findExistingLine(
+            commande.equipements,
+            equipementDto
+          ),
+        })
+      );
+    }
 
     let panneId = commande.panne?._id || commande.panne;
     if (dto.panne) {
@@ -270,103 +259,103 @@ export class CommandeService {
     return CommandeRepository.updateCommande(id, {
       panne: panneId,
       fournisseur: fournisseur._id,
-      articles,
-      prixtotal,
+      equipements,
+      prixtotal: computeTotal(equipements),
     });
   };
 
+  static #applyReceptionItem = async (commande, item) => {
+    if (!item.equipement) {
+      throw new ValidationError(
+        "L'identifiant d'équipement est requis pour réceptionner un équipement"
+      );
+    }
+
+    const itemEquipementId = item.equipement.toString();
+
+    const targetLine = commande.equipements.find((e) => {
+      if (!e.equipement) return false;
+      const lineEquipementId = e.equipement._id
+        ? e.equipement._id.toString()
+        : e.equipement.toString();
+      return lineEquipementId === itemEquipementId;
+    });
+
+    if (!targetLine) {
+      throw new ValidationError(
+        "L'équipement réceptionné ne figure pas dans la commande initiale"
+      );
+    }
+
+    const equipementId = targetLine.equipement._id || targetLine.equipement;
+
+    const soldeACommander =
+      targetLine.quantiteCommandee - targetLine.quantiteRecue;
+    if (item.quantiteRecue > soldeACommander) {
+      throw new ValidationError(
+        `La quantité reçue (${item.quantiteRecue}) dépasse la quantité restante à recevoir (${soldeACommander})`
+      );
+    }
+
+    targetLine.quantiteRecue += item.quantiteRecue;
+
+    const prixApplique =
+      item.prixUnitaire !== undefined && item.prixUnitaire !== null
+        ? item.prixUnitaire
+        : targetLine.prixUnitaire;
+
+    targetLine.prixUnitaire = prixApplique;
+
+    if (prixApplique > 0) {
+      await EquipementService.enregistrerPrixAchat({
+        equipementId,
+        nouveauPrix: prixApplique,
+        commandeId: commande._id,
+        fournisseurId: commande.fournisseur,
+      });
+    }
+
+    return {
+      equipement: equipementId,
+      quantiteRecue: item.quantiteRecue,
+      prixUnitaire: prixApplique,
+    };
+  };
 
   static receptionnerCommande = async (id, dto, userId) => {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant commande invalide");
     }
 
-    const commande = await CommandeModel.findOne({ _id: id, deletedAt: null });
+    const commande = await CommandeRepository.getCommandeById(id);
     if (!commande) {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
     if (commande.status === "RECUE" || commande.status === "ANNULEE") {
-      throw new ConflictError(`Impossible d'enregistrer une réception sur une commande au statut ${commande.status}`);
+      throw new ConflictError(
+        `Impossible d'enregistrer une réception sur une commande au statut ${commande.status}`
+      );
     }
 
-    const receptionArticlesLog = [];
-
-    for (const item of dto.articlesRecus) {
-      let targetArticle = commande.articles.find((a) => {
-        if (item.equipement && a.equipement) {
-          return a.equipement.toString() === item.equipement.toString();
-        }
-        if (item.typeEquipement && a.typeEquipement) {
-          return a.typeEquipement.toString() === item.typeEquipement.toString();
-        }
-        return false;
-      });
-
-      if (!targetArticle) {
-        throw new ValidationError("L'article réceptionné ne figure pas dans la commande initiale");
-      }
-
-      let equipementId = targetArticle.equipement;
-
-      if (!equipementId && targetArticle.typeEquipement) {
-        const newEquipement = await EquipementService.createEquipement({
-          designation: targetArticle.designation || "Équipement Réceptionné",
-          type: targetArticle.typeEquipement,
-          fournisseur: commande.fournisseur,
-          modele: targetArticle.modele || null,
-          prix: item.prixUnitaire ?? targetArticle.prixUnitaire ?? 0,
-        });
-
-        equipementId = newEquipement._id;
-        targetArticle.equipement = equipementId;
-      }
-
-      const soldeACommander = targetArticle.quantiteCommandee - targetArticle.quantiteRecue;
-      if (item.quantiteRecue > soldeACommander) {
-        throw new ValidationError(
-          `La quantité reçue (${item.quantiteRecue}) dépasse la quantité restante à recevoir (${soldeACommander})`
-        );
-      }
-
-      targetArticle.quantiteRecue += item.quantiteRecue;
-
-      const prixApplique = item.prixUnitaire !== undefined && item.prixUnitaire !== null
-        ? item.prixUnitaire
-        : targetArticle.prixUnitaire;
-
-      targetArticle.prixUnitaire = prixApplique;
-
-      if (equipementId && prixApplique > 0) {
-        await EquipementService.enregistrerPrixAchat({
-          equipementId,
-          nouveauPrix: prixApplique,
-          commandeId: commande._id,
-          fournisseurId: commande.fournisseur,
-        });
-      }
-
-      receptionArticlesLog.push({
-        equipement: equipementId,
-        quantiteRecue: item.quantiteRecue,
-        prixUnitaire: prixApplique,
-      });
+    const equipementsRecusLog = [];
+    for (const item of dto.equipementsRecus) {
+      equipementsRecusLog.push(
+        await CommandeService.#applyReceptionItem(commande, item)
+      );
     }
 
-    const toutRecu = commande.articles.every(
-      (a) => a.quantiteRecue >= a.quantiteCommandee
+    const toutRecu = commande.equipements.every(
+      (e) => e.quantiteRecue === e.quantiteCommandee
     );
 
     commande.status = toutRecu ? "RECUE" : "PARTIELLEMENT_RECUE";
-    commande.prixtotal = commande.articles.reduce(
-      (acc, l) => acc + l.quantiteCommandee * l.prixUnitaire,
-      0
-    );
+    commande.prixtotal = computeTotal(commande.equipements);
 
     commande.receptions.push({
       date: new Date(),
       receptionnePar: userId,
-      articlesRecus: receptionArticlesLog,
+      equipementsRecus: equipementsRecusLog,
     });
 
     await commande.save();
@@ -384,12 +373,14 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
-    const targetStatus = STATUS_MAP[status.toLowerCase().trim()] || status.toUpperCase();
+    const targetStatus = normalizeStatus(status);
 
     if (targetStatus === "ANNULEE") {
-      const aDejaRecu = commande.articles.some((a) => a.quantiteRecue > 0);
+      const aDejaRecu = commande.equipements.some((e) => e.quantiteRecue > 0);
       if (aDejaRecu) {
-        throw new ConflictError("Impossible d'annuler une commande qui a déjà fait l'objet d'une réception");
+        throw new ConflictError(
+          "Impossible d'annuler une commande qui a déjà fait l'objet d'une réception"
+        );
       }
     }
 
@@ -411,9 +402,11 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
-    const aDejaRecu = commande.articles.some((a) => a.quantiteRecue > 0);
+    const aDejaRecu = commande.equipements.some((e) => e.quantiteRecue > 0);
     if (aDejaRecu) {
-      throw new ConflictError("Impossible de supprimer une commande qui a déjà fait l'objet d'une réception");
+      throw new ConflictError(
+        "Impossible de supprimer une commande qui a déjà fait l'objet d'une réception"
+      );
     }
 
     const success = await CommandeRepository.deleteLogically(id);

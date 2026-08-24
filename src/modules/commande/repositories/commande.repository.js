@@ -8,10 +8,9 @@ export class CommandeRepository {
         .populate('fournisseur')
         .populate('demandeur', 'nom prenom username tel type')
         .populate('panne')
-        .populate('articles.equipement')
-        .populate('articles.typeEquipement')
+        .populate('equipements.equipement')
         .populate('receptions.receptionnePar', 'nom prenom username tel type')
-        .populate('receptions.articlesRecus.equipement')
+        .populate('receptions.equipementsRecus.equipement')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -25,10 +24,9 @@ export class CommandeRepository {
       .populate('fournisseur')
       .populate('demandeur', 'nom prenom username tel type')
       .populate('panne')
-      .populate('articles.equipement')
-      .populate('articles.typeEquipement')
+      .populate('equipements.equipement')
       .populate('receptions.receptionnePar', 'nom prenom username tel type')
-      .populate('receptions.articlesRecus.equipement');
+      .populate('receptions.equipementsRecus.equipement');
     return document ? document : null;
   };
 
@@ -42,8 +40,7 @@ export class CommandeRepository {
       'fournisseur',
       { path: 'demandeur', select: 'nom prenom username tel type' },
       'panne',
-      'articles.equipement',
-      'articles.typeEquipement',
+      'equipements.equipement',
     ]);
   };
 
@@ -59,10 +56,9 @@ export class CommandeRepository {
       .populate('fournisseur')
       .populate('demandeur', 'nom prenom username tel type')
       .populate('panne')
-      .populate('articles.equipement')
-      .populate('articles.typeEquipement')
+      .populate('equipements.equipement')
       .populate('receptions.receptionnePar', 'nom prenom username tel type')
-      .populate('receptions.articlesRecus.equipement');
+      .populate('receptions.equipementsRecus.equipement');
 
     return document ? document : null;
   };
@@ -85,10 +81,9 @@ export class CommandeRepository {
       .populate('fournisseur')
       .populate('demandeur', 'nom prenom username tel type')
       .populate('panne')
-      .populate('articles.equipement')
-      .populate('articles.typeEquipement')
+      .populate('equipements.equipement')
       .populate('receptions.receptionnePar', 'nom prenom username tel type')
-      .populate('receptions.articlesRecus.equipement');
+      .populate('receptions.equipementsRecus.equipement');
 
     return document ? document : null;
   };

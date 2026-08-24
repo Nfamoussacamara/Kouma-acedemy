@@ -16,19 +16,15 @@ const VALID_STATUSES = [
   "ANNULEE",
 ];
 
-const articleInputSchema = yup
-  .object({
-    equipement: yup
-      .string()
-      .matches(objectIdRegex, "Format d'identifiant d'équipement invalide")
-      .nullable()
-      .default(null),
-    typeEquipement: yup
-      .string()
-      .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
-      .nullable()
-      .default(null),
-    designation: yup.string().trim().nullable().optional(),
+const equipementInputSchema = yup.object({
+  equipement: yup
+    .string()
+    .trim()
+    .matches(
+      objectIdRegex,
+      "Format d'identifiant d'équipement invalide"
+    )
+    .required("L'équipement est obligatoire"),
     quantiteCommandee: yup
       .number()
       .typeError("La quantité commandée doit être un nombre")
@@ -41,28 +37,24 @@ const articleInputSchema = yup
       .min(0, "Le prix unitaire doit être supérieur ou égal à 0")
       .default(0),
   })
-  .test(
-    "equipement-ou-type",
-    "Chaque article doit référencer soit un équipement, soit un type d'équipement",
-    (article) => !!(article?.equipement || article?.typeEquipement)
-  );
 
 export const createCommandeSchema = yup.object({
   panne: yup
     .string()
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de panne invalide")
-    .required("Le champ panne est requis"),
+    .optional(),
+
   fournisseur: yup
     .string()
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de fournisseur invalide")
     .required("Le champ fournisseur est requis"),
-  articles: yup
+  equipements: yup
     .array()
-    .of(articleInputSchema)
-    .min(1, "Une commande doit contenir au moins un article")
-    .required("Le champ articles est requis"),
+    .of(equipementInputSchema)
+    .min(1, "Une commande doit contenir au moins un équipement")
+    .required("Le champ equipements est requis"),
   utiliserPrixCatalogue: yup
     .boolean()
     .default(false),
@@ -79,10 +71,10 @@ export const updateCommandeSchema = yup.object({
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de fournisseur invalide")
     .optional(),
-  articles: yup
+  equipements: yup
     .array()
-    .of(articleInputSchema)
-    .min(1, "Une commande doit contenir au moins un article")
+    .of(equipementInputSchema)
+    .min(1, "Une commande doit contenir au moins un équipement")
     .optional(),
 });
 
@@ -103,7 +95,7 @@ export const toggleStatusSchema = yup.object({
 });
 
 export const receptionCommandeSchema = yup.object({
-  articlesRecus: yup
+  equipementsRecus: yup
     .array()
     .of(
       yup.object({
@@ -111,14 +103,7 @@ export const receptionCommandeSchema = yup.object({
           .string()
           .trim()
           .matches(objectIdRegex, "Format d'identifiant d'équipement invalide")
-          .nullable()
-          .optional(),
-        typeEquipement: yup
-          .string()
-          .trim()
-          .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
-          .nullable()
-          .optional(),
+          .required("L'identifiant d'équipement est requis"),
         quantiteRecue: yup
           .number()
           .typeError("La quantité reçue doit être un nombre")
@@ -133,12 +118,12 @@ export const receptionCommandeSchema = yup.object({
           .nullable(),
       })
     )
-    .min(1, "Veuillez fournir au moins un article réceptionné")
-    .required("Le champ articlesRecus est requis"),
+    .min(1, "Veuillez fournir au moins un équipement réceptionné")
+    .required("Le champ equipementsRecus est requis"),
 });
 
 export const suggestEquipementsSchema = yup.object({
-  articles: yup
+  equipements: yup
     .array()
     .of(
       yup.object({
@@ -146,18 +131,20 @@ export const suggestEquipementsSchema = yup.object({
           .string()
           .trim()
           .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
-          .nullable() 
+          .nullable()
           .optional(),
-        designation: yup.string().trim().nullable().optional(),
-        modele: yup.string().trim().nullable().optional(),
+        modele: yup.string()
+          .trim()
+          .nullable()
+          .optional(),
       })
       .test(
-        "article-non-vide",
-        "Un article doit contenir au moins une information (designation, modele ou type d'équipement)",
-        (article) => !!(article.designation || article.modele || article.typeEquipement)
+        "equipement-non-vide",
+        "Un équipement doit contenir au moins une information (modele ou type d'équipement)",
+        (equipement) => !!(equipement.modele || equipement.typeEquipement)
       )
     )
-    .min(1, "Le tableau articles doit contenir au moins un élément")
-    .required("Le tableau articles est requis"),
+    .min(1, "Le tableau equipements doit contenir au moins un équipement")
+    .required("Le tableau equipements est requis"),
 });
 
