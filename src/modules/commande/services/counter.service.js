@@ -8,16 +8,15 @@ export class CounterService {
     const day = String(today.getDate()).padStart(2, "0");
     const prefix = `CMD-${year}${month}${day}`;
 
-    // Trouver la dernière commande générée aujourd'hui
     const latest = await CommandeModel.findOne({
-      numero: new RegExp(`^${prefix}-`),
+      reference: new RegExp(`^${prefix}-`),
     })
       .sort({ createdAt: -1 })
       .lean();
 
     let seq = 1;
-    if (latest && latest.numero) {
-      const parts = latest.numero.split("-");
+    if (latest && latest.reference) {
+      const parts = latest.reference.split("-");
       const lastSeq = parseInt(parts[parts.length - 1], 10);
       if (!isNaN(lastSeq)) {
         seq = lastSeq + 1;

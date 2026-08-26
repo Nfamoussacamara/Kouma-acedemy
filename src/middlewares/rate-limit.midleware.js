@@ -5,11 +5,9 @@ const rateLimitHandler = (message) => {
     return (req, res) => {
 
         res.status(429).json({
-            success: false,
-            error: {
-                code: "TOO_MANY_REQUESTS",
-                message
-            }
+            message: message,
+            error: "TOO_MANY_REQUESTS",
+            statusCode: 429
         });
 
     };
@@ -19,7 +17,7 @@ const rateLimitHandler = (message) => {
 
 export const loginRateLimit = rateLimit({
 
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 5 * 60 * 1000, // 15 minutes
 
     max: 5,
 
@@ -39,7 +37,7 @@ export const loginRateLimit = rateLimit({
 
 
     handler: rateLimitHandler(
-        "Trop de tentatives de connexion. Réessayez plus tard."
+        "Trop de tentatives de connexion. Réessayez  dans 5 mintutes"
     )
 
 });
@@ -64,7 +62,7 @@ export const apiRateLimit = rateLimit({
 
 
     handler: rateLimitHandler(
-        "Trop de requêtes. Réessayez plus tard."
+        "Trop de requêtes. Réessayez dans 15 minutes ."
     )
 
 });

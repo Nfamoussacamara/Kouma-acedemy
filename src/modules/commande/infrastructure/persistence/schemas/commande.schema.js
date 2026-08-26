@@ -2,7 +2,7 @@ import { mongoose } from "../../../../../infrastructure/database/mongoose.js";
 
 export const commandeSchema = new mongoose.Schema(
   {
-    numero: {
+    reference: {
       type: String,
     },
 
@@ -21,22 +21,13 @@ export const commandeSchema = new mongoose.Schema(
       ref: "User",
     },
 
-    articles: [
+    equipements: [
       {
         equipement: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Equipement",
         },
-
-        typeEquipement: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "TypeEquipement",
-        },
-
-        designation: {
-          type: String,
-        },
-
+        
         quantiteCommandee: {
           type: Number,
           required: true,
@@ -65,7 +56,7 @@ export const commandeSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
         },
-        articlesRecus: [
+        equipementsRecus: [
           {
             equipement: {
               type: mongoose.Schema.Types.ObjectId,

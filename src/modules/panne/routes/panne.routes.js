@@ -22,13 +22,6 @@ export function createPanneRoutes() {
 
   router.use(authMiddleware);
 
-  // Endpoint pour charger les options dynamiques du formulaire (UI)
-  router.get(
-    "/options",
-    apiRateLimit,
-    PanneController.getOptions
-  );
-
   router.get(
     "/",
     apiRateLimit,
