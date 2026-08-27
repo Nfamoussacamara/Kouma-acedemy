@@ -15,7 +15,6 @@ export const tokenBlacklistSchema = new mongoose.Schema(
     },
     expiresAt: {
       type: Date,
-      required: true,
     },
     reason: {
       type: String,
@@ -27,5 +26,4 @@ export const tokenBlacklistSchema = new mongoose.Schema(
   }
 );
 
-// Index TTL : MongoDB supprime automatiquement le document quand la date expiresAt est atteinte
 tokenBlacklistSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

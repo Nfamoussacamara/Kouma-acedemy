@@ -16,9 +16,9 @@ export class TokenBlacklistRepository {
       { upsert: true, new: true }
     );
   };
-  static isTokenBlacklisted = async (token) => {
-    if (!token) return false;
-    const found = await TokenBlacklistModel.exists({ token });
-    return !!found;
+  static getTokenBlacklisted = async (token) => {
+    if (!token) return null;
+    const found = await TokenBlacklistModel.findOne({ token }).lean();
+    return found || null;
   };
 }

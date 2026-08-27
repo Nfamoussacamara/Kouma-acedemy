@@ -13,12 +13,12 @@ export class UserRepository {
   };
 
   static getUserById = async (id) => {
-    const document = await UserModel.findOne({ _id: id, deletedAt: null });
+    const document = await UserModel.findOne({ _id: id, deletedAt: null }).select("+tokenVersion");
     return document ? document : null;
   };
 
   static getUserByIdWithPassword = async (id) => {
-    const document = await UserModel.findOne({ _id: id, deletedAt: null }).select("+password");
+    const document = await UserModel.findOne({ _id: id, deletedAt: null }).select("+password +tokenVersion");
     return document ? document : null;
   };
 
@@ -32,7 +32,7 @@ export class UserRepository {
   static getUserByUsernameWithPassword = async (username) => {
     const document = await UserModel.findOne({
       username: username.toLowerCase().trim(),
-    }).select("+password");
+    }).select("+password +tokenVersion");
     return document ? document : null;
   };
 
@@ -79,5 +79,10 @@ export class UserRepository {
     return result.modifiedCount > 0;
   };
 
-
+  static incrementTokenVersion = async (userId) => {
+    return UserModel.findOneAndUpdate(
+      { _id: userId, deletedAt: null },
+      { $inc: { tokenVersion: 1 } }
+    );
+  };
 }

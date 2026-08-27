@@ -32,5 +32,12 @@ export function createAuthRoutes() {
     AuthController.logout
   );
 
+  router.post(
+    '/logout-all',
+    apiRateLimit,
+    auditlogmidleware,
+    authMiddleware,
+    AuthController.logoutAll
+  );
   return router;
 }

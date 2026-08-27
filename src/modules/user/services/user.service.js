@@ -18,7 +18,7 @@ export class UserService {
   static listUsers = async (query = {}) => {
     const { page, limit, skip } = getPagination(query);
     const searchFilter = createSearchFilter(query.search, ['nom', 'prenom', 'username', 'tel']);
-    
+
     const filter = { ...searchFilter };
 
     if (query.status === "active") {
@@ -34,7 +34,7 @@ export class UserService {
       limit,
       filter,
     });
- 
+
     return {
       data: documents,
       meta: { page, limit, total },
@@ -87,7 +87,7 @@ export class UserService {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
-    
+
     if (dto.tel) {
       const phone = formatPhoneNumber(dto.tel);
       const existingUser = await UserRepository.getUserByPhone(phone);
@@ -146,6 +146,7 @@ export class UserService {
     const updated = await UserRepository.updateUser(id, {
       password: hashedPassword,
     });
+    await UserRepository.incrementTokenVersion(id);
     return updated;
   };
 
@@ -169,4 +170,4 @@ export class UserService {
       throw new NotFoundError(`Utilisateur ${id} non trouvé`);
     }
   };
-}
+};

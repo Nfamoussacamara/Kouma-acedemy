@@ -34,10 +34,22 @@ export class AuthController {
   static logout = asyncHandler(async (req, res) => {
     const token = req.token || (req.headers.authorization?.startsWith('Bearer ')
     ? req.headers.authorization.slice(7) : null);
-    await AuthService.logout({ token, userId: req.user?.id });
+    await AuthService.logout({
+      accessToken: token,
+      refreshToken: req.body?.refreshToken,
+      userId: req?.user?.id,
+    });
     res.json({
       success: true,
       message: 'Déconnexion réussie',
+    });
+  });
+
+  static logoutAll = asyncHandler(async (req, res) => {
+    await AuthService.logoutAll({ userId: req?.user?.id });
+    res.json({
+      success: true,
+      message: 'Déconnexion de tous les appareils réussie',
     });
   });
 }
