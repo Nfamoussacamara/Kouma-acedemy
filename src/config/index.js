@@ -15,6 +15,8 @@ const config = {
   cloudinaryName: process.env.CLOUDINARY_NAME,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+  swaggerUsername: process.env.SWAGGER_USERNAME ,
+  swaggerPassword: process.env.SWAGGER_PASSWORD,
 };
 
 export default config;

@@ -12,7 +12,7 @@ const allowedMimeTypes = [
 
 const fileFilter = (_req, file, cb) => {
   if (!allowedMimeTypes.includes(file.mimetype)) {
-    return cb(new ValidationError(`Type de fichier non autorisé ${file.mimetype}`));
+    return cb(new ValidationError("Type de fichier non autorisé"));
   }
   cb(null, true);
 };

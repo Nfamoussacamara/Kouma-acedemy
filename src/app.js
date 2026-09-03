@@ -7,6 +7,7 @@ import { createLoggingMiddleware } from './middlewares/logging.middleware.js';
 import { notFoundHandler, errorHandler } from './middlewares/error.middleware.js';
 import { registerRoutes, createHealthRouter } from './routes/index.js';
 import { openApiSpec } from '../docs/swagger/openapi.js';
+import basicAuth from "express-basic-auth";
 
 export function createApp() {
   const app = express();
@@ -21,9 +22,17 @@ export function createApp() {
 
   app.use(createHealthRouter());
 
-  if (!config.isProduction) {
-    app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
-  }
+app.use(
+  "/docs",
+  basicAuth({
+    users: {
+      [config.swagger.username]: config.swagger.password,
+    },
+    challenge: true,
+  }),
+  swaggerUi.serve,
+  swaggerUi.setup(openApiSpec)
+);
 
   const apiRouter = express.Router();
   registerRoutes(apiRouter);
