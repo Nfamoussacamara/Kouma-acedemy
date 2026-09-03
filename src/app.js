@@ -22,17 +22,17 @@ export function createApp() {
 
   app.use(createHealthRouter());
 
-app.use(
-  "/docs",
-  basicAuth({
-    users: {
-      [config.swagger.username]: config.swagger.password,
-    },
-    challenge: true,
-  }),
-  swaggerUi.serve,
-  swaggerUi.setup(openApiSpec)
-);
+  app.use(
+    "/docs",
+    basicAuth({
+      users: {
+        [config.swaggerUsername]: config.swaggerPassword,
+      },
+      challenge: true,
+    }),
+    swaggerUi.serve,
+    swaggerUi.setup(openApiSpec)
+  );
 
   const apiRouter = express.Router();
   registerRoutes(apiRouter);
