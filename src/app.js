@@ -22,14 +22,22 @@ export function createApp() {
 
   app.use(createHealthRouter());
 
+  const swaggerMiddlewares = [];
+
+  if (config.isProduction) {
+    swaggerMiddlewares.push(
+      basicAuth({
+        users: {
+          [config.swaggerUsername]: config.swaggerPassword,
+        },
+        challenge: true,
+      })
+    );
+  }
+
   app.use(
-    "/docs",
-    basicAuth({
-      users: {
-        [config.swaggerUsername]: config.swaggerPassword,
-      },
-      challenge: true,
-    }),
+    '/docs',
+    ...swaggerMiddlewares,
     swaggerUi.serve,
     swaggerUi.setup(openApiSpec)
   );
