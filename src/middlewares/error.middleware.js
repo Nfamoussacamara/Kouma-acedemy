@@ -1,5 +1,6 @@
-import { AppError } from "../shared/errors/AppError.js";
-import config from "../config/index.js";
+import multer from "multer";
+// import { AppError } from "../shared/errors/AppError.js";
+// import config from "../config/index.js"
 
 export function notFoundHandler(_req, res) {
   res.status(404).json({
@@ -32,6 +33,31 @@ export function errorHandler(err, _req, res, _next) {
   // }
 
   // res.status(statusCode).json(payload);
+
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "Le fichier ne doit pas dépasser 5 Mo",
+        error: "FILE_TOO_LARGE",
+        statusCode: 400,
+      });
+    }
+
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      return res.status(400).json({
+        message: 'Nom de champ de fichier invalide (attendu : "file")',
+        error: "UNEXPECTED_FILE",
+        statusCode: 400,
+      });
+    }
+
+    return res.status(400).json({
+      message: err.message,
+      error: err.code,
+      statusCode: 400,
+    });
+  }
 
   if (err?.isOperational) {
     const payload = {

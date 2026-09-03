@@ -12,6 +12,9 @@ const config = {
   process.env.MONGODB_URI ?? 'mongodb://localhost:27017/kouma_academy',
   isProduction: process.env.NODE_ENV === 'production',
   isTest: process.env.NODE_ENV === 'test',
+  cloudinaryName: process.env.CLOUDINARY_NAME,
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
 };
 
 export default config;
