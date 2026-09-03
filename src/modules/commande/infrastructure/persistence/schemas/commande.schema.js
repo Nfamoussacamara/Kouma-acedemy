@@ -27,7 +27,7 @@ export const commandeSchema = new mongoose.Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Equipement",
         },
-        
+
         quantiteCommandee: {
           type: Number,
           required: true,
@@ -48,6 +48,9 @@ export const commandeSchema = new mongoose.Schema(
 
     receptions: [
       {
+        reference: {
+          type: String,
+        },
         date: {
           type: Date,
           default: Date.now,
@@ -72,18 +75,52 @@ export const commandeSchema = new mongoose.Schema(
             },
           },
         ],
+        facture: {
+          nomOriginal: {
+            type: String,
+            default: null,
+          },
+          url: {
+            type: String,
+            default: null,
+          },
+          publicId: {
+            type: String,
+            default: null,
+          },
+          mimeType: {
+            type: String,
+            default: null,
+          },
+          taille: {
+            type: Number,
+            default: null,
+          },
+          uploadedAt: {
+            type: Date,
+            default: Date.now,
+          },
+          uploadedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+          },
+          deletedAt: {
+            type: Date,
+            default: null,
+          },
+          deletedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+          },
+        },
       },
     ],
 
     status: {
       type: String,
-      enum: [
-        "BROUILLON",
-        "EMISE",
-        "PARTIELLEMENT_RECUE",
-        "RECUE",
-        "ANNULEE",
-      ],
+      enum: ["BROUILLON", "EMISE", "PARTIELLEMENT_RECUE", "RECUE", "ANNULEE"],
       default: "BROUILLON",
     },
 
