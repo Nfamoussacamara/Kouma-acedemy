@@ -353,6 +353,7 @@ export class CommandeService {
     commande.prixtotal = computeTotal(commande.equipements);
 
     commande.receptions.push({
+      reference: await CounterService.nextReceptionNumber(),
       date: new Date(),
       receptionnePar: userId,
       equipementsRecus: equipementsRecusLog,
