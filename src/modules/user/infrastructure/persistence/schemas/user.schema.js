@@ -31,8 +31,13 @@ export const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+      select: false,
+    }
   },
   {
     timestamps: true,
-  }
+  },
 );

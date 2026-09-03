@@ -87,4 +87,20 @@ export class CommandeRepository {
 
     return document ? document : null;
   };
+
+  static updateReceptionFacture = async (commandeId, receptionId, factureData) => {
+    const document = await CommandeModel.findOneAndUpdate(
+      { _id: commandeId, 'receptions._id': receptionId, deletedAt: null },
+      { $set: { 'receptions.$.facture': factureData } },
+      { new: true, runValidators: true },
+    )
+      .populate('fournisseur')
+      .populate('demandeur', 'nom prenom username tel type')
+      .populate('panne')
+      .populate('equipements.equipement')
+      .populate('receptions.receptionnePar', 'nom prenom username tel type')
+      .populate('receptions.equipementsRecus.equipement');
+
+    return document ? document : null;
+  };
 }

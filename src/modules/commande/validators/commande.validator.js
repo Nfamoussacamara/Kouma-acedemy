@@ -148,3 +148,17 @@ export const suggestEquipementsSchema = yup.object({
     .required("Le tableau equipements est requis"),
 });
 
+export const factureParamsSchema = yup.object({
+  commandeId: yup
+    .string()
+    .trim()
+    .matches(objectIdRegex, "Format d'identifiant de commande invalide")
+    .required("L'identifiant de commande est requis"),
+  receptionId: yup
+    .string()
+    .trim()
+    .matches(objectIdRegex, "Format d'identifiant de réception invalide")
+    .required("L'identifiant de réception est requis"),
+});
+
+

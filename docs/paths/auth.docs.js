@@ -106,5 +106,30 @@ export const authPaths = {
         401: { description: 'Non authentifié ou jeton invalide' }
       }
     }
+  },
+
+  '/auth/logout-all': {
+    post: {
+      tags: ['Authentification'],
+      summary: 'Déconnexion de toutes les sessions de l\'utilisateur',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Déconnexion globale réussie',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  message: { type: 'string', example: 'Déconnexion réussie de tous les appareils' }
+                }
+              }
+            }
+          }
+        },
+        401: { description: 'Non authentifié ou jeton invalide' }
+      }
+    }
   }
 };

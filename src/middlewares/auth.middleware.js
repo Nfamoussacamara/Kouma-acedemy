@@ -3,11 +3,6 @@ import config from '../config/index.js';
 import { UnauthorizedError } from '../shared/errors/AppError.js';
 import { TokenBlacklistRepository } from '../modules/user/repositories/tokenBlacklist.repository.js';
 
-/**
- * Vérifie le token JWT et attache l'utilisateur décodé à req.user.
- * Rejette immédiatement les tokens révoqués (blacklist).
- * Expects: Authorization: Bearer <token>
- */
 export async function authMiddleware(req, _res, next) {
   const header = req.headers.authorization;
 
@@ -23,7 +18,7 @@ export async function authMiddleware(req, _res, next) {
 
   try {
  
-    const isBlacklisted = await TokenBlacklistRepository.isTokenBlacklisted(token);
+    const isBlacklisted = await TokenBlacklistRepository.getTokenBlacklisted(token);
     if (isBlacklisted) {
       return next(new UnauthorizedError('Ce jeton a été révoqué suite à une déconnexion'));
     }
@@ -52,7 +47,7 @@ export async function optionalAuth(req, _res, next) {
   if (header?.startsWith('Bearer ')) {
     const token = header.slice(7);
     try {
-      const isBlacklisted = await TokenBlacklistRepository.isTokenBlacklisted(token);
+      const isBlacklisted = await TokenBlacklistRepository.getTokenBlacklisted(token);
       if (!isBlacklisted) {
         const decoded = jwt.verify(token, config.jwtSecret);
         req.token = token;

@@ -3,14 +3,17 @@ import { validateBody, validateParams, validateQuery } from '../../../middleware
 import { authMiddleware } from '../../../middlewares/auth.middleware.js';
 import { requireRole } from '../../../middlewares/role.middleware.js';
 import { CommandeController } from '../controllers/commande.controller.js';
+import { FactureController } from '../controllers/facture.controller.js';
 import { idParamSchema } from '../../../validators/common.validator.js';
-import { 
-  createCommandeSchema, 
-  updateCommandeSchema, 
-  toggleStatusSchema, 
+import { validateFile } from '../../../middlewares/validate.file.midleware.js';
+import {
+  createCommandeSchema,
+  updateCommandeSchema,
+  toggleStatusSchema,
   listCommandeQuerySchema,
   receptionCommandeSchema,
-  suggestEquipementsSchema
+  suggestEquipementsSchema,
+  factureParamsSchema,
 } from '../validators/commande.validator.js';
 import { apiRateLimit } from '../../../middlewares/rate-limit.midleware.js';
 import { auditlogmidleware } from '../../../middlewares/logger.midleware.js';
@@ -20,16 +23,16 @@ export function createCommandeRoutes() {
 
   router.use(authMiddleware);
 
-  router.get('/', 
-    apiRateLimit, 
-    auditlogmidleware, 
-    validateQuery(listCommandeQuerySchema), 
+  router.get('/',
+    apiRateLimit,
+    auditlogmidleware,
+    validateQuery(listCommandeQuerySchema),
     CommandeController.listCommandes);
 
-  router.get('/:id', 
-    apiRateLimit, 
-    auditlogmidleware, 
-    validateParams(idParamSchema), 
+  router.get('/:id',
+    apiRateLimit,
+    auditlogmidleware,
+    validateParams(idParamSchema),
     CommandeController.getCommandeById);
 
   router.post(
@@ -87,6 +90,34 @@ export function createCommandeRoutes() {
     requireRole(["Admin"]),
     validateBody(suggestEquipementsSchema),
     CommandeController.suggestEquipements
+  );
+
+  router.post(
+    "/:commandeId/receptions/:receptionId/facture",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(factureParamsSchema),
+    validateFile.single("file"),
+    FactureController.upload
+  );
+
+  router.delete(
+    "/:commandeId/receptions/:receptionId/facture",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(factureParamsSchema),
+    FactureController.remove
+  );
+
+  router.patch(
+    "/:commandeId/receptions/:receptionId/facture/restore",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(factureParamsSchema),
+    FactureController.restore
   );
 
   return router;

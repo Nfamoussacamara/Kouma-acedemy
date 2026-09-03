@@ -26,23 +26,21 @@ export const commandePaths = {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['panne', 'fournisseur', 'articles'],
+              required: ['fournisseur', 'equipements'],
               properties: {
-                panne: { type: 'string', description: 'ID MongoDB de la panne liée à cette commande' },
+                panne: { type: 'string', description: 'ID MongoDB de la panne liée à cette commande (optionnel)', nullable: true },
                 fournisseur: { type: 'string', description: 'ID MongoDB du fournisseur' },
-                utiliserPrixCatalogue: { type: 'boolean', default: false, description: 'Optionnel. Si true, pré-remplit le prix unitaire des articles catalogue avec le dernier prix catalogue connu (si > 0).' },
-                articles: {
+                utiliserPrixCatalogue: { type: 'boolean', default: false, description: 'Optionnel. Si true, pré-remplit le prix unitaire des équipements avec le dernier prix catalogue connu (si > 0).' },
+                equipements: {
                   type: 'array',
                   minItems: 1,
                   items: {
                     type: 'object',
-                    required: ['quantiteCommandee'],
+                    required: ['equipement', 'quantiteCommandee'],
                     properties: {
-                      equipement: { type: 'string', description: 'ID équipement du catalogue (optionnel si typeEquipement renseigné)', nullable: true },
-                      typeEquipement: { type: 'string', description: 'ID type d\'équipement hors-catalogue (optionnel si equipement renseigné)', nullable: true },
-                      designation: { type: 'string', description: 'Désignation libre pour article hors-catalogue', nullable: true },
-                      quantiteCommandee: { type: 'integer', minimum: 1 },
-                      prixUnitaire: { type: 'number', minimum: 0, default: 0, description: 'Prix optionnel — connu après réception du devis' }
+                      equipement: { type: 'string', description: 'ID MongoDB de l\'équipement' },
+                      quantiteCommandee: { type: 'integer', minimum: 1, description: 'Quantité commandée' },
+                      prixUnitaire: { type: 'number', minimum: 0, default: 0, description: 'Prix unitaire (optionnel, 0 par défaut)' }
                     }
                   }
                 }
@@ -53,8 +51,47 @@ export const commandePaths = {
       },
       responses: {
         201: { description: 'Commande créée en statut BROUILLON avec numéro séquentiel généré automatiquement' },
-        400: { description: 'Validation échouée ou article sans référence (equipement ou typeEquipement)' },
+        400: { description: 'Validation échouée' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
         404: { description: 'Fournisseur, panne ou équipement catalogue introuvable' }
+      }
+    }
+  },
+  '/commandes/suggestions-equipements': {
+    post: {
+      tags: ['Commandes'],
+      summary: 'Suggérer des équipements correspondants pour une commande (Admin)',
+      security: [{ bearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['equipements'],
+              properties: {
+                equipements: {
+                  type: 'array',
+                  minItems: 1,
+                  items: {
+                    type: 'object',
+                    properties: {
+                      typeEquipement: { type: 'string', description: 'ID MongoDB du type d\'équipement', nullable: true },
+                      modele: { type: 'string', description: 'Modèle de l\'équipement', nullable: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        200: { description: 'Suggestions d\'équipements trouvées' },
+        400: { description: 'Validation échouée' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' }
       }
     }
   },
@@ -67,7 +104,8 @@ export const commandePaths = {
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
       ],
       responses: {
-        200: { description: 'Détails complets avec fournisseur, pannes liées, demandeur, articles et réceptions' },
+        200: { description: 'Détails complets avec fournisseur, panne liée, demandeur, équipements et réceptions' },
+        401: { description: 'Non authentifié' },
         404: { description: 'Commande non trouvée' }
       }
     },
@@ -85,24 +123,18 @@ export const commandePaths = {
             schema: {
               type: 'object',
               properties: {
-                panne: {
-                  type: 'string',
-                  description: 'ID de la panne liée',
-                  nullable: true,
-                },
+                panne: { type: 'string', description: 'ID de la panne liée', nullable: true },
                 fournisseur: { type: 'string', nullable: true },
-                articles: {
+                equipements: {
                   type: 'array',
                   minItems: 1,
                   items: {
                     type: 'object',
-                    required: ['quantiteCommandee'],
+                    required: ['equipement', 'quantiteCommandee'],
                     properties: {
-                      equipement: { type: 'string', nullable: true },
-                      typeEquipement: { type: 'string', nullable: true },
-                      designation: { type: 'string', nullable: true },
+                      equipement: { type: 'string', description: 'ID MongoDB de l\'équipement' },
                       quantiteCommandee: { type: 'integer', minimum: 1 },
-                      prixUnitaire: { type: 'number', minimum: 0, description: 'Figé si des réceptions existent sur cet article' }
+                      prixUnitaire: { type: 'number', minimum: 0, description: 'Figé si des réceptions existent sur cet équipement' }
                     }
                   }
                 }
@@ -113,6 +145,9 @@ export const commandePaths = {
       },
       responses: {
         200: { description: 'Commande mise à jour avec succès' },
+        400: { description: 'Validation échouée' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
         409: { description: 'Statut RECUE ou ANNULEE — modification impossible. Ou tentative de modifier un prix figé' }
       }
     },
@@ -125,6 +160,8 @@ export const commandePaths = {
       ],
       responses: {
         200: { description: 'Commande supprimée avec succès' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
         404: { description: 'Commande non trouvée ou déjà supprimée' },
         409: { description: 'Impossible de supprimer une commande avec réceptions' }
       }
@@ -144,19 +181,18 @@ export const commandePaths = {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['articlesRecus'],
+              required: ['equipementsRecus'],
               properties: {
-                articlesRecus: {
+                equipementsRecus: {
                   type: 'array',
                   minItems: 1,
                   items: {
                     type: 'object',
-                    required: ['quantiteRecue'],
+                    required: ['equipement', 'quantiteRecue'],
                     properties: {
-                      equipement: { type: 'string', description: 'ID équipement catalogue', nullable: true },
-                      typeEquipement: { type: 'string', description: 'ID type d\'équipement (pour article hors-catalogue)', nullable: true },
+                      equipement: { type: 'string', description: 'ID équipement catalogue' },
                       quantiteRecue: { type: 'integer', minimum: 1 },
-                      prixUnitaire: { type: 'number', minimum: 0, description: 'Prix réel communiqué par le fournisseur — met à jour le catalogue' }
+                      prixUnitaire: { type: 'number', minimum: 0, nullable: true, description: 'Prix unitaire d\'achat réel constaté — met à jour l\'historique de prix' }
                     }
                   }
                 }
@@ -167,9 +203,11 @@ export const commandePaths = {
       },
       responses: {
         200: {
-          description: 'Réception enregistrée. Statut passe automatiquement à PARTIELLEMENT_RECUE ou RECUE. Les équipements hors-catalogue sont créés automatiquement. Le prix catalogue est mis à jour avec historique.'
+          description: 'Réception enregistrée. Statut passe automatiquement à PARTIELLEMENT_RECUE ou RECUE.'
         },
-        400: { description: 'Article non trouvé dans la commande ou quantité reçue supérieure au solde restant' },
+        400: { description: 'Équipement non trouvé dans la commande ou quantité reçue supérieure au solde restant' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
         409: { description: 'Commande déjà RECUE ou ANNULEE' }
       }
     }
@@ -203,8 +241,80 @@ export const commandePaths = {
       responses: {
         200: { description: 'Statut mis à jour avec succès' },
         400: { description: 'Valeur de statut invalide' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
         404: { description: 'Commande non trouvée' },
         409: { description: 'Annulation impossible si des réceptions existent' }
+      }
+    }
+  },
+  '/commandes/{commandeId}/receptions/{receptionId}/facture': {
+    post: {
+      tags: ['Commandes'],
+      summary: 'Téléverser une facture pour une réception de commande (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: 'commandeId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID MongoDB de la commande' },
+        { name: 'receptionId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la réception' }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              required: ['file'],
+              properties: {
+                file: {
+                  type: 'string',
+                  format: 'binary',
+                  description: 'Fichier facture (PDF, image, etc.)'
+                }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        200: { description: 'Facture enregistrée avec succès' },
+        400: { description: 'Aucun fichier fourni ou format invalide' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Commande ou réception introuvable' }
+      }
+    },
+    delete: {
+      tags: ['Commandes'],
+      summary: 'Supprimer (soft delete) la facture d\'une réception (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: 'commandeId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID MongoDB de la commande' },
+        { name: 'receptionId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la réception' }
+      ],
+      responses: {
+        200: { description: 'Facture supprimée avec succès' },
+        400: { description: 'Aucune facture associée ou déjà supprimée' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Commande ou réception introuvable' }
+      }
+    }
+  },
+  '/commandes/{commandeId}/receptions/{receptionId}/facture/restore': {
+    patch: {
+      tags: ['Commandes'],
+      summary: 'Restaurer la facture supprimée d\'une réception (Admin)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: 'commandeId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID MongoDB de la commande' },
+        { name: 'receptionId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la réception' }
+      ],
+      responses: {
+        200: { description: 'Facture restaurée avec succès' },
+        400: { description: 'Aucune facture associée ou facture non supprimée' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Commande ou réception introuvable' }
       }
     }
   }
