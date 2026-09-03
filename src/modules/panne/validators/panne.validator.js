@@ -302,6 +302,13 @@ export const listPanneQuerySchema = yup.object({
       "statut invalide"
     )
     .optional(),
+    
+  structure_sanitaire: yup
+    .string()
+    .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
+    .optional()
+    .transform((value) => value.toUpperCase()),
+
 });
 
 export const toggleStatutSchema = yup.object({

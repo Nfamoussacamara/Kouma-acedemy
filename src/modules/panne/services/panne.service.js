@@ -62,6 +62,10 @@ export class PanneService {
       filter.statut = STATUS_MAP[rawStatus] || query.statut;
     }
 
+    if (query.structure_sanitaire) {
+      filter.structure_sanitaire = query.structure_sanitaire;
+    }
+
     const [documents, total] = await PanneRepository.getAllPannes({
       skip,
       limit,
