@@ -1,3 +1,5 @@
+import { STRUCTURE_SANITAIRE } from '../../src/modules/panne/panne.constants.js';
+
 export const authPaths = {
   '/auth/login': {
     post: {
@@ -19,7 +21,7 @@ export const authPaths = {
         },
       },
       responses: { 
-        200: { description: 'Utilisateur connecté avec succès (renvoie le token)' },
+        200: { description: 'Utilisateur connecté avec succès (renvoie accessToken, refreshToken et profil utilisateur avec structure_sanitaire)' },
         401: { description: 'Identifiants invalides' }
       },
     }
@@ -61,7 +63,7 @@ export const authPaths = {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['username', 'password', 'nom', 'prenom', 'type'],
+              required: ['username', 'password', 'nom', 'prenom', 'type', 'structure_sanitaire'],
               properties: {
                 username: { type: 'string' },
                 password: { type: 'string', minLength: 8 },
@@ -69,6 +71,12 @@ export const authPaths = {
                 prenom: { type: 'string' },
                 tel: { type: 'string' },
                 type: { type: 'string', enum: ['Admin', 'Utilisateur'] },
+                structure_sanitaire: {
+                  type: 'string',
+                  enum: STRUCTURE_SANITAIRE,
+                  description: 'Structure sanitaire de rattachement de l\'utilisateur (requise)',
+                  example: 'HOPITAL REGIONAL DE LABE'
+                },
                 isActive: { type: 'boolean' },
               },
             },

@@ -63,6 +63,7 @@ export const pannePaths = {
     post: {
       tags: ['Pannes'],
       summary: 'Déclarer / Créer une nouvelle panne (Admin)',
+      description: 'La structure sanitaire et la référence unique (ex: PA-HRL-0001-JJMM) sont automatiquement déduites et générées à partir du compte de l\'utilisateur connecté.',
       security: [{ bearerAuth: [] }],
       requestBody: {
         required: true,
@@ -112,7 +113,7 @@ export const pannePaths = {
         },
       },
       responses: {
-        201: { description: 'Panne créée avec succès avec statut NOUVELLE' },
+        201: { description: 'Panne créée avec succès avec statut NOUVELLE (référence et structure_sanitaire attribuées automatiquement)' },
         400: { description: 'Validation échouée (champs conditionnels manquants ou exclusivité mutuelle violée)' },
         401: { description: 'Non authentifié' },
       },
@@ -134,6 +135,7 @@ export const pannePaths = {
     patch: {
       tags: ['Pannes'],
       summary: 'Modifier les informations d\'une panne (Admin)',
+      description: 'Remarque : les champs reference, structure_sanitaire et declarant sont immuables et ne peuvent pas être modifiés.',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
