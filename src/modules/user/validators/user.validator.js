@@ -1,6 +1,6 @@
 import * as yup from 'yup';
-import  {phoneNumberValidator}  from '../../../shared/utils/phone.util.js';
-
+import { phoneNumberValidator } from '../../../shared/utils/phone.util.js';
+import { STRUCTURE_SANITAIRE } from '../../panne/panne.constants.js';
 export const createUserSchema = yup.object({
   username: yup
     .string()
@@ -25,6 +25,11 @@ export const createUserSchema = yup.object({
     .string()
     .oneOf(['Admin', 'Utilisateur'], 'Rôle invalide')
     .default('Utilisateur'),
+  structure_sanitaire: yup
+    .string()
+    .oneOf(STRUCTURE_SANITAIRE, 'Structure sanitaire invalide')
+    .required('Structure sanitaire requise')
+    .transform((value) => (value ? value.toUpperCase() : value)),
 });
 
 export const updateUserSchema = yup.object({
@@ -38,7 +43,7 @@ export const updateUserSchema = yup.object({
     .string()
     .test('is-valid-phone',
       'Numéro de téléphone invalide',
-      (value) =>{
+      (value) => {
         if (!value) return true;
         return phoneNumberValidator(value);
       }
@@ -47,6 +52,12 @@ export const updateUserSchema = yup.object({
   type: yup
     .string()
     .oneOf(['Admin', 'Utilisateur'], 'Rôle invalide'),
+
+  structure_sanitaire: yup
+    .string()
+    .oneOf(STRUCTURE_SANITAIRE, 'Structure sanitaire invalide')
+    .optional()
+    .transform((value) => (value ? value.toUpperCase() : value)),
 });
 
 export const changePasswordSchema = yup.object({
@@ -56,7 +67,7 @@ export const changePasswordSchema = yup.object({
   newPassword: yup
     .string()
     .min(8, 'Le nouveau mot de passe doit avoir au moins 8 caractères')
-    .required('Nouveau mot de passe requis'),
+    .required('Nouveau mot de passe requis')
 });
 
 export const toggleStatusSchema = yup.object({
@@ -64,4 +75,3 @@ export const toggleStatusSchema = yup.object({
     .boolean()
     .required('Le champ isActive est requis'),
 });
-

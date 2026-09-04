@@ -1,4 +1,5 @@
 import { mongoose } from '../../../../../infrastructure/database/mongoose.js';
+import { STRUCTURE_SANITAIRE } from '../../../../panne/panne.constants.js';
 
 export const userSchema = new mongoose.Schema(
   {
@@ -21,16 +22,25 @@ export const userSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      default: 'Utilisateur',
+      enum: ["Admin", "Utilisateur"],
+      default: "Utilisateur",
     },
+
+    structure_sanitaire: {
+      type: String,
+      enum: STRUCTURE_SANITAIRE,
+    },
+
     isActive: {
       type: Boolean,
       default: true,
     },
+
     deletedAt: {
       type: Date,
       default: null,
     },
+
     tokenVersion: {
       type: Number,
       default: 0,

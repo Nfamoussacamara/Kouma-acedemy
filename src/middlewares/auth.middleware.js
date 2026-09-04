@@ -29,6 +29,7 @@ export async function authMiddleware(req, _res, next) {
       id: decoded.id,
       username: decoded.username,
       type: decoded.type, // 'Admin' ou 'Utilisateur'
+      structure_sanitaire: decoded.structure_sanitaire,
     };
     next();
   } catch (error) {
@@ -55,6 +56,7 @@ export async function optionalAuth(req, _res, next) {
           id: decoded.id,
           username: decoded.username,
           type: decoded.type,
+          structure_sanitaire: decoded.structure_sanitaire,
         };
       }
     } catch (e) {
