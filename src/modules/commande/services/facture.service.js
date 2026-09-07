@@ -5,12 +5,15 @@ import { NotFoundError, ValidationError } from '../../../shared/errors/AppError.
 const CLOUDINARY_FOLDER = 'kouma-academy/commandes/factures';
 
 export class FactureService {
-  static #uploadToCloudinary = (fileBuffer, originalName, commandeReference, receptionReference) => {
+  static #uploadToCloudinary = (fileBuffer, originalName, mimeType, commandeReference, receptionReference) => {
     return new Promise((resolve, reject) => {
+      const resourceType = mimeType === 'application/pdf'
+        ? 'raw'
+        : 'image';
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: `${CLOUDINARY_FOLDER}/${commandeReference}/${receptionReference}`,
-          resource_type: 'auto',
+          resource_type: resourceType,
           filename_override: originalName,
           use_filename: true,
         },
@@ -43,10 +46,11 @@ export class FactureService {
     const result = await FactureService.#uploadToCloudinary(
       file.buffer,
       file.originalname,
+      file.mimetype,
       commande.reference || commande._id,
       reception.reference || reception._id
     );
-
+    
     return CommandeRepository.updateReceptionFacture(commandeId, receptionId, {
       nomOriginal: file.originalname,
       url: result.secure_url,

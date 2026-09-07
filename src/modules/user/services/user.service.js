@@ -16,17 +16,19 @@ import { removeUndefinedValues } from '../../../shared/utils/payload.util.js';
 const isDuplicateKeyError = (error) => error?.code === 11000;
 
 export class UserService {
-  static listUsers = async (query = {}) => {
+  static listUsers = async (query = {}, currentUserId) => {
     const { page, limit, skip } = getPagination(query);
     const searchFilter = createSearchFilter(query.search, ['nom', 'prenom', 'username', 'tel']);
-
-    const filter = { ...searchFilter };
-
+    const filter = { 
+      ...searchFilter,
+      _id: { $ne: currentUserId }
+    };
+    
     if (query.status === "active") {
       filter.isActive = true;
     } else if (query.status === "inactive") {
       filter.isActive = false;
-    }
+    } 
 
     filter.deletedAt = null;
 
