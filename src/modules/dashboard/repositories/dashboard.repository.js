@@ -62,9 +62,15 @@ class DashboardRepository {
           $match: {
             deletedAt: null,
             statut: { $in: ["NOUVELLE", "EN_COURS"] },
+            "equipements.0": { $exists: true },
           },
         },
         { $unwind: "$equipements" },
+        {
+          $match: {
+            "equipements.equipement": { $ne: null },
+          },
+        },
         { $group: { _id: "$equipements.equipement" } },
         { $count: "count" },
       ]),
@@ -74,8 +80,8 @@ class DashboardRepository {
         { $sort: { count: -1 } },
       ]),
       PanneModel.find({ deletedAt: null })
-        .populate("declarant", "username email nom prenom structure_sanitaire")
-        .select("reference structure_sanitaire description type_panne niveau_urgence statut besoin_intervention createdAt")
+        .populate("declarant", "username nom prenom tel structure_sanitaire")
+        .select("reference structure_sanitaire description type_panne niveau_urgence statut besoin_intervention createdAt declarant")
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
@@ -133,7 +139,7 @@ class DashboardRepository {
       PanneModel.countDocuments({ deletedAt: null, declarant: userId, statut: "CLOTUREE" }),
       PanneModel.countDocuments({ deletedAt: null, declarant: userId, besoin_intervention: true }),
       PanneModel.find({ deletedAt: null, declarant: userId })
-        .select("reference description type_panne niveau_urgence statut besoin_intervention createdAt")
+        .select("reference structure_sanitaire description type_panne niveau_urgence statut besoin_intervention createdAt")
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
@@ -151,9 +157,11 @@ class DashboardRepository {
     };
   }
 
-  static async getMonthlyCharts(year = new Date().getFullYear()) {
-    const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
-    const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+  static async getMonthlyCharts(year) {
+    const currentYear = new Date().getFullYear();
+    const validYear = (typeof year === 'number' && !isNaN(year) && year >= 2000) ? year : currentYear;
+    const startDate = new Date(`${validYear}-01-01T00:00:00.000Z`);
+    const endDate = new Date(`${validYear + 1}-01-01T00:00:00.000Z`);
 
     const [pannesMonthly, commandesMonthly] = await Promise.all([
       PanneModel.aggregate([
@@ -195,11 +203,9 @@ class DashboardRepository {
       ]),
     ]);
 
-    // 2. Indexation en Map O(1) pour éviter les .find() répétitifs
     const pannesMap = new Map(pannesMonthly.map((item) => [item._id, item]));
     const commandesMap = new Map(commandesMonthly.map((item) => [item._id, item]));
 
-    // 3. Préparation des 12 mois complets
     const moisNoms = [
       "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
       "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",

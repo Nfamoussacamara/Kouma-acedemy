@@ -6,24 +6,25 @@ import { apiRateLimit } from '../../../middlewares/rate-limit.midleware.js';
 
 export function createDashboardRoutes() {
     const router = Router();
+
     router.get('/',
         apiRateLimit,
         authMiddleware,
-        requireRole(['Admin']),
+        requireRole(['Admin', 'Utilisateur']),
         DashboardController.getDashboardStats
     );
 
     router.get('/user-stats',
         apiRateLimit,
         authMiddleware,
-        requireRole(['Utilisateur', 'Admin']),
+        requireRole(['Admin', 'Utilisateur']),
         DashboardController.getMyStats
     );
 
     router.get('/charts/monthly',
         apiRateLimit,
         authMiddleware,
-        requireRole(['Admin']),
+        requireRole(['Admin', 'Utilisateur']),
         DashboardController.getMonthlyCharts
     );
 
