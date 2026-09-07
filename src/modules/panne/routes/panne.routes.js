@@ -26,6 +26,7 @@ export function createPanneRoutes() {
     "/",
     apiRateLimit,
     auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
     validateQuery(listPanneQuerySchema),
     PanneController.listPannes
   );
@@ -34,6 +35,7 @@ export function createPanneRoutes() {
     "/:id",
     apiRateLimit,
     auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
     validateParams(idParamSchema),
     PanneController.getPanneById
   );
@@ -42,7 +44,7 @@ export function createPanneRoutes() {
     "/",
     apiRateLimit,
     auditlogmidleware,
-    requireRole(["Admin"]),
+    requireRole(["Admin","Utilisateur"]),
     validateBody(createPanneSchema),
     PanneController.createPanne
   );
@@ -51,7 +53,7 @@ export function createPanneRoutes() {
     "/:id",
     apiRateLimit,
     auditlogmidleware,
-    requireRole(["Admin"]),
+    requireRole(["Admin", "Utilisateur"]),
     validateParams(idParamSchema),
     validateBody(updatePanneSchema),
     PanneController.updatePanne
@@ -71,7 +73,7 @@ export function createPanneRoutes() {
     "/:id",
     apiRateLimit,
     auditlogmidleware,
-    requireRole(["Admin"]),
+    requireRole(["Admin", "Utilisateur"]),
     validateParams(idParamSchema),
     PanneController.deletePanne
   );
