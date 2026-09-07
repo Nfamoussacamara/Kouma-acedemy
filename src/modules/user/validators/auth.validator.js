@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import { STRUCTURE_SANITAIRE } from '../../panne/panne.constants.js';
 
 export const loginSchema = yup.object({
   username: yup
@@ -34,6 +35,11 @@ export const registerSchema = yup.object({
     .string()
     .oneOf(['Admin', 'Utilisateur'], 'Rôle invalide')
     .default('Utilisateur'),
+  structure_sanitaire: yup
+    .string()
+    .oneOf(STRUCTURE_SANITAIRE, 'Structure sanitaire invalide')
+    .required('Structure sanitaire requise')
+    .transform((value) => (value ? value.toUpperCase() : value)),
 });
 
 export const refreshSchema = yup.object({

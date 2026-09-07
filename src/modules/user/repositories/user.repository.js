@@ -45,6 +45,7 @@ export class UserRepository {
       tel: dto.tel,
       type: dto.type ?? "Utilisateur",
       isActive: true,
+      structure_sanitaire: dto.structure_sanitaire,
     });
     return document;
   };

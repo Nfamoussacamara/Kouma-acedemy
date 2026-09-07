@@ -1,6 +1,7 @@
 import argon2 from "argon2";
 import {
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -74,6 +75,7 @@ export class UserService {
         prenom: dto.prenom,
         tel: phone,
         type: dto.type,
+        structure_sanitaire: dto.structure_sanitaire?.toUpperCase(),
       });
     } catch (error) {
       if (isDuplicateKeyError(error)) {
@@ -83,7 +85,7 @@ export class UserService {
     }
   };
 
-  static updateUser = async (id, dto) => {
+  static updateUser = async (id, dto, connectedUserId) => {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant utilisateur invalide");
     }
@@ -96,6 +98,23 @@ export class UserService {
       }
     }
 
+    const isAdminFieldModified =
+      dto.type !== undefined ||
+      dto.structure_sanitaire !== undefined;
+
+    if (isAdminFieldModified) {
+      const connectedUser = await UserRepository.getUserById(connectedUserId);
+      if (!connectedUser) {
+        throw new NotFoundError("Utilisateur connecté non trouvé");
+      }
+      if (dto.type !== undefined && connectedUser.type !== "Admin") {
+        throw new ForbiddenError("Vous n'avez pas le droit de modifier votre type");
+      }
+      if (dto.structure_sanitaire !== undefined && connectedUser.type !== "Admin") {
+        throw new ForbiddenError("Vous n'avez pas le droit de modifier votre structure sanitaire");
+      }
+    }
+
     try {
       const payload = removeUndefinedValues({
         username: dto.username,
@@ -104,7 +123,7 @@ export class UserService {
         prenom: dto.prenom,
         tel: dto.tel ? formatPhoneNumber(dto.tel) : undefined,
         type: dto.type,
-        isActive: dto.isActive,
+        structure_sanitaire: dto.structure_sanitaire,
       });
 
       if (Object.keys(payload).length === 0) {

@@ -13,8 +13,8 @@ export class PanneController {
   });
 
   static createPanne = asyncHandler(async (req, res) => {
-    const userId = req.user?.id || req.user?._id;
-    const data = await PanneService.createPanne(req.body, userId);
+    const user = req.user;
+    const data = await PanneService.createPanne(req.body, user);
     res.status(201).json({ success: true, data });
   });
 

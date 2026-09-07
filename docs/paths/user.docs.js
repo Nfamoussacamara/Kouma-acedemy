@@ -1,3 +1,5 @@
+import { STRUCTURE_SANITAIRE } from '../../src/modules/panne/panne.constants.js';
+
 export const userPaths = {
   '/users': {
     get: {
@@ -86,7 +88,13 @@ export const userPaths = {
                 nom: { type: 'string' },
                 prenom: { type: 'string' },
                 tel: { type: 'string' },
-                username: { type: 'string' }
+                username: { type: 'string' },
+                type: { type: 'string', enum: ['Admin', 'Utilisateur'] },
+                structure_sanitaire: {
+                  type: 'string',
+                  enum: STRUCTURE_SANITAIRE,
+                  description: 'Structure sanitaire de rattachement'
+                }
               }
             }
           }

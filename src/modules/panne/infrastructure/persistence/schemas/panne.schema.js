@@ -12,14 +12,14 @@ import {
 export const panneSchema = new mongoose.Schema(
   {
     reference:{
-      type : String
+      type: String,
     },
 
-    structure_sanitaire:{
-      type : String,
-      enum : STRUCTURE_SANITAIRE,
+    structure_sanitaire: {
+      type: String,
+      enum: STRUCTURE_SANITAIRE,
     },
- 
+
     description: {
       type: String,
     },

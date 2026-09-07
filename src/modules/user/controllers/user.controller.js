@@ -29,16 +29,9 @@ export class UserController {
   });
 
   static update = asyncHandler(async (req, res) => {
-    const targetId = req.params.id;
-    const isAdmin = req.user.type === 'Admin';
-
-    const updatePayload = { ...req.body };
-    if (!isAdmin) {
-      delete updatePayload.type;
-      delete updatePayload.isActive;
-    }
-
-    const user = await UserService.updateUser(targetId, updatePayload);
+    const connectedUserId = req.user.id;
+    const targetUserId = req.params.id;
+    const user = await UserService.updateUser(targetUserId, req.body, connectedUserId);
     res.json({ success: true, data: user });
   });
 

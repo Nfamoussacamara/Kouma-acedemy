@@ -88,12 +88,7 @@ const updateEquipementLigneSchema = yup
   })
 
 export const createPanneSchema = yup.object({
-  structure_sanitaire: yup
-    .string()
-    .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
-    .required("Le champ structure_sanitaire est requis")
-    .transform((value) => value.toUpperCase()),
-
+  
   description: yup
     .string()
     .trim()
@@ -190,12 +185,6 @@ export const createPanneSchema = yup.object({
 });
 
 export const updatePanneSchema = yup.object({
-
-  structure_sanitaire: yup
-    .string()
-    .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
-    .optional()
-    .transform((value) => value.toUpperCase()),
 
   description: yup
     .string()

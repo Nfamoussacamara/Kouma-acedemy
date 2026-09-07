@@ -16,7 +16,6 @@ import {
   SYSTEMES,
   IMPACTS_PAR_TYPE,
   TENTATIVES_PAR_TYPE,
-  STRUCTURE_SANITAIRE,
 } from "../panne.constants.js";
 import { nextPanneReference } from "../services/counter.service.js";
 import { EquipementRepository } from "../../equipement/repositories/equipement.repository.js";
@@ -88,7 +87,7 @@ export class PanneService {
   static getCommandesForPanne = async (panneId) => {
     return CommandeModel.find({ panne: panneId, deletedAt: null })
       .populate('fournisseur')
-      .populate('demandeur', 'nom prenom username tel type')
+      .populate('demandeur', 'nom prenom username tel type structure_sanitaire')
       .sort({ createdAt: -1 })
       .lean();
   };
@@ -108,17 +107,18 @@ export class PanneService {
     return { ...panne.toObject(), commandes };
   };
 
-  static createPanne = async (dto, userId) => {
+  static createPanne = async (dto, user) => {
     if (dto.equipements) {
       await PanneService.validateEquipementsExist(dto.equipements);
     }
 
-    const reference = await nextPanneReference(dto.structure_sanitaire);
+    const reference = await nextPanneReference(user.structure_sanitaire);
 
     return PanneRepository.createPanne({
       ...dto,
-      declarant: userId,
+      declarant: user.id,
       reference,
+      structure_sanitaire: user.structure_sanitaire,
     });
   };
 
@@ -141,15 +141,7 @@ export class PanneService {
       await PanneService.validateEquipementsExist(cleanDto.equipements);
     }
 
-    let reference = panne.reference;
-    if (cleanDto.structure_sanitaire && cleanDto.structure_sanitaire !== panne.structure_sanitaire) {
-      reference = await nextPanneReference(cleanDto.structure_sanitaire);
-    }
-
-    const updated = await PanneRepository.updatePanne(id, {
-      ...cleanDto,
-      reference
-    });
+    const updated = await PanneRepository.updatePanne(id, cleanDto);
     if (!updated) {
       throw new NotFoundError(`Panne ${id} non trouvée`);
     }

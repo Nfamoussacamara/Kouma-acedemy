@@ -29,6 +29,7 @@ export class AuthService {
       id: user._id.toString(),
       username: user.username,
       type: user.type,
+      structure_sanitaire: user.structure_sanitaire,
     };
 
     const refreshPayload = {
@@ -91,6 +92,7 @@ export class AuthService {
       id: user._id.toString(),
       username: user.username,
       type: user.type,
+      structure_sanitaire: user.structure_sanitaire,
     };
     const newRefreshPayload = {
       id: user._id.toString(),
