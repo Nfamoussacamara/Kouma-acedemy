@@ -3,7 +3,8 @@ import { asyncHandler } from '../../../shared/errors/asyncHandler.js';
 
 export class UserController {
   static list = asyncHandler(async (req, res) => {
-    const result = await UserService.listUsers(req.query);
+    const currentUserId = req.user.id;
+    const result = await UserService.listUsers(req.query, currentUserId);
     res.json({ success: true, ...result });
   });
   
