@@ -9,8 +9,23 @@ export function createDashboardRoutes() {
     router.get('/',
         apiRateLimit,
         authMiddleware,
-        requireRole(['Admin', 'User']),
+        requireRole(['Admin']),
         DashboardController.getDashboardStats
     );
+
+    router.get('/user-stats',
+        apiRateLimit,
+        authMiddleware,
+        requireRole(['Utilisateur', 'Admin']),
+        DashboardController.getMyStats
+    );
+
+    router.get('/charts/monthly',
+        apiRateLimit,
+        authMiddleware,
+        requireRole(['Admin']),
+        DashboardController.getMonthlyCharts
+    );
+
     return router;
 }
