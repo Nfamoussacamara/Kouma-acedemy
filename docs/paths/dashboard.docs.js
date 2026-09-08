@@ -2,8 +2,8 @@ export const dashboardPaths = {
   '/dashboard': {
     get: {
       tags: ['Dashboard'],
-      summary: 'Obtenir les statistiques globales du tableau de bord (Admin)',
-      description: 'Retourne les KPIs globaux des utilisateurs, équipements, commandes et pannes (incluant répartition par structure et dernières pannes).',
+      summary: 'Obtenir les statistiques globales du tableau de bord',
+      description: 'Retourne les KPIs globaux des utilisateurs, équipements, commandes et pannes (incluant répartition par structure et dernières pannes). Accès réservé aux Administrateurs.',
       security: [{ bearerAuth: [] }],
       responses: {
         200: {
@@ -93,7 +93,7 @@ export const dashboardPaths = {
           },
         },
         401: { description: 'Non authentifié' },
-        403: { description: 'Privilèges insuffisants' },
+        403: { description: 'Accès réservé aux administrateurs' },
       },
     },
   },
@@ -102,7 +102,7 @@ export const dashboardPaths = {
     get: {
       tags: ['Dashboard'],
       summary: 'Obtenir les statistiques personnelles de l’utilisateur connecté',
-      description: 'Retourne le bilan des pannes déclarées par l’utilisateur (par statut, urgence, besoin d’intervention et les 5 dernières pannes).',
+      description: 'Retourne le bilan des pannes déclarées par l’utilisateur connecté (par statut, urgence, besoin d’intervention et les 5 dernières pannes). Accessible aux rôles Admin et Utilisateur.',
       security: [{ bearerAuth: [] }],
       responses: {
         200: {
@@ -148,6 +148,7 @@ export const dashboardPaths = {
           },
         },
         401: { description: 'Non authentifié' },
+        403: { description: 'Accès interdit' },
       },
     },
   },
@@ -155,8 +156,8 @@ export const dashboardPaths = {
   '/dashboard/charts/monthly': {
     get: {
       tags: ['Dashboard'],
-      summary: 'Obtenir l’évolution mensuelle des pannes et commandes (Admin)',
-      description: 'Retourne les statistiques mois par mois sur l’année spécifiée pour les graphiques.',
+      summary: 'Obtenir l’évolution mensuelle des pannes et commandes',
+      description: 'Retourne les statistiques mois par mois sur l’année spécifiée pour alimenter les graphiques. Accès réservé aux Administrateurs.',
       security: [{ bearerAuth: [] }],
       parameters: [
         {

@@ -44,9 +44,9 @@ Le backend met à disposition des endpoints dédiés aux tableaux de bord :
 
 | Endpoint | Méthode | Rôles Autorisés | Description |
 | :--- | :--- | :--- | :--- |
-| `/api/v1/dashboard` | GET | `Admin`, `Utilisateur` | Vue globale complète du système (KPIs, parcs, pannes, commandes) |
+| `/api/v1/dashboard` | GET | `Admin` | Vue globale complète du système (KPIs, parcs, pannes, commandes) |
 | `/api/v1/dashboard/user-stats` | GET | `Admin`, `Utilisateur` | Statistiques personnelles de l'utilisateur connecté |
-| `/api/v1/dashboard/charts/monthly` | GET | `Admin`, `Utilisateur` | Données temporelles sur 12 mois (pannes et commandes) |
+| `/api/v1/dashboard/charts/monthly` | GET | `Admin` | Données temporelles sur 12 mois (pannes et commandes) |
 
 Toutes ces requêtes nécessitent l'envoi du jeton JWT dans l'en-tête HTTP :
 ```http
@@ -61,7 +61,7 @@ Authorization: Bearer <access_token>
 
 - URL : `/api/v1/dashboard`
 - Méthode : `GET`
-- Rôles autorisés : `Admin`, `Utilisateur`
+- Rôles autorisés : `Admin`
 - Paramètres : Aucun
 
 ### 3.2 Structure exacte de la réponse (200 OK)
@@ -224,7 +224,7 @@ Toutes ces valeurs concernent uniquement les déclarations faites par l'utilisat
 
 - URL : `/api/v1/dashboard/charts/monthly`
 - Méthode : `GET`
-- Rôles autorisés : `Admin`, `Utilisateur`
+- Rôles autorisés : `Admin`
 - Paramètre Query :
   - `year` (optionnel, entier) : Année souhaitée (ex: `?year=2026`). Si absent ou invalide, l'année courante est prise par défaut.
 
