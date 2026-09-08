@@ -10,7 +10,7 @@ export function createDashboardRoutes() {
     router.get('/',
         apiRateLimit,
         authMiddleware,
-        requireRole(['Admin', 'Utilisateur']),
+        requireRole(['Admin']),
         DashboardController.getDashboardStats
     );
 
@@ -24,7 +24,7 @@ export function createDashboardRoutes() {
     router.get('/charts/monthly',
         apiRateLimit,
         authMiddleware,
-        requireRole(['Admin', 'Utilisateur']),
+        requireRole(['Admin']),
         DashboardController.getMonthlyCharts
     );
 
