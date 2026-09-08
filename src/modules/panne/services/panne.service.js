@@ -41,11 +41,13 @@ export class PanneService {
     }
   };
 
-  static listPannes = async (query = {}) => {
+  static listPannes = async (query = {}, user = {}) => {
     const { page, limit, skip } = getPagination(query);
 
     const filter = {};
-
+    if (user?.type === "Utilisateur") {
+      filter.declarant = user.id;
+    }
     if (query.niveau_urgence) {
       filter.niveau_urgence = query.niveau_urgence;
     }
@@ -71,19 +73,12 @@ export class PanneService {
       filter,
     });
 
-    const sorted = documents.sort(
-      (a, b) =>
-        (URGENCE_ORDER[a.niveau_urgence] ?? 99) -
-        (URGENCE_ORDER[b.niveau_urgence] ?? 99)
-    );
-
     return {
-      data: sorted,
+      data: documents,
       meta: { page, limit, total },
     };
   };
 
-  // Retourne les commandes liées à une panne — appelé dans le détail d'une panne
   static getCommandesForPanne = async (panneId) => {
     return CommandeModel.find({ panne: panneId, deletedAt: null })
       .populate('fournisseur')
