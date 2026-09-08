@@ -19,16 +19,36 @@ import { auditlogmidleware } from '../../../middlewares/logger.midleware.js';
 export function createUserRoutes() {
 
   const router = Router();
-  router.use(authMiddleware)
- 
-  router.get('/', apiRateLimit, auditlogmidleware, requireRole(["Admin"]), validateQuery(paginationQuerySchema), UserController.list);
+  router.use(authMiddleware);
+  
+  router.get('/',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateQuery(paginationQuerySchema),
+    UserController.list
+  );
 
-  router.get('/me', apiRateLimit, auditlogmidleware, UserController.getMe);
+  router.get('/me',
+    apiRateLimit,
+    auditlogmidleware,
+    UserController.getMe
+  );
 
 
-  router.patch('/me/password', apiRateLimit, auditlogmidleware, validateBody(changePasswordSchema), UserController.updateMePassword);
+  router.patch('/me/password',
+    apiRateLimit,
+    auditlogmidleware,
+    validateBody(changePasswordSchema),
+    UserController.updateMePassword
+  );
 
-  router.get('/:id', apiRateLimit, auditlogmidleware,  requireRole(["Admin"]), UserController.getById);
+  router.get('/:id',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    UserController.getById
+  );
 
   router.patch(
     '/:id',
