@@ -3,7 +3,8 @@ import { PanneService } from "../services/panne.service.js";
 
 export class PanneController {
   static listPannes = asyncHandler(async (req, res) => {
-    const result = await PanneService.listPannes(req.query);
+    const CurrentUser = req.user
+    const result = await PanneService.listPannes(req.query, CurrentUser);
     res.json({ success: true, ...result });
   });
 

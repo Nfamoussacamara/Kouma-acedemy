@@ -26,12 +26,14 @@ export function createCommandeRoutes() {
   router.get('/',
     apiRateLimit,
     auditlogmidleware,
+    requireRole(['Admin']),
     validateQuery(listCommandeQuerySchema),
     CommandeController.listCommandes);
 
   router.get('/:id',
     apiRateLimit,
     auditlogmidleware,
+    requireRole(['Admin']),
     validateParams(idParamSchema),
     CommandeController.getCommandeById);
 

@@ -19,26 +19,28 @@ export function createEquipementRoutes() {
   router.use(authMiddleware);
 
 
-  router.get('/', 
-    apiRateLimit, 
-    auditlogmidleware, 
-    validateQuery(listEquipementsQuerySchema), 
-    EquipementController.list);
+  router.get('/',
+    apiRateLimit,
+    auditlogmidleware,
+    validateQuery(listEquipementsQuerySchema),
+    EquipementController.list
+  );
 
 
-  router.get('/:id' , 
-    apiRateLimit, 
-    auditlogmidleware, 
-    validateParams(idParamSchema), 
-    EquipementController.getById);
+  router.get('/:id',
+    apiRateLimit,
+    auditlogmidleware,
+    validateParams(idParamSchema),
+    EquipementController.getById
+  );
 
-
-  router.post('/' , 
-    apiRateLimit, 
-    auditlogmidleware, 
-    requireRole(["Admin"]), 
-    validateBody(createEquipementSchema), 
-    EquipementController.create );
+  router.post('/',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateBody(createEquipementSchema),
+    EquipementController.create
+  );
 
  
   router.patch(
@@ -65,7 +67,8 @@ export function createEquipementRoutes() {
     auditlogmidleware,
     requireRole(["Admin"]),
     validateParams(idParamSchema),
-    EquipementController.delete);
+    EquipementController.delete
+  );
 
   return router;
 }
