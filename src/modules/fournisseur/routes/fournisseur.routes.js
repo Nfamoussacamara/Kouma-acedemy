@@ -14,14 +14,30 @@ export function createFournisseurRoutes() {
 
   router.use(authMiddleware);
 
-  router.get('/', apiRateLimit, auditlogmidleware, validateQuery(paginationQuerySchema), FournisseurController.list);
+  router.get('/',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(['Admin']),
+    validateQuery(paginationQuerySchema),
+    FournisseurController.list
+  );
 
-  router.get('/:id', apiRateLimit, auditlogmidleware, FournisseurController.getById);
+  router.get('/:id',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(['Admin']),
+    FournisseurController.getById
+  );
 
-  router.post('/' , apiRateLimit, auditlogmidleware, requireRole(['Admin']), validateBody(createFournisseurSchema), FournisseurController.create);
+  router.post('/',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(['Admin']),
+    validateBody(createFournisseurSchema),
+    FournisseurController.create
+  );
 
-  router.patch(
-    '/:id',
+  router.patch('/:id',
     apiRateLimit,
     auditlogmidleware,
     requireRole(['Admin']),
@@ -29,8 +45,7 @@ export function createFournisseurRoutes() {
     FournisseurController.update
   );
 
-  router.patch(
-    '/:id/status',
+  router.patch('/:id/status',
     apiRateLimit,
     auditlogmidleware,
     requireRole(['Admin']),
@@ -38,7 +53,12 @@ export function createFournisseurRoutes() {
     FournisseurController.toggleStatus
   );
 
-  router.delete('/:id', apiRateLimit, requireRole(['Admin']), FournisseurController.delete);
+  router.delete('/:id',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(['Admin']),
+    FournisseurController.delete
+  );
 
   return router;
 }
