@@ -49,4 +49,13 @@ export default class typeEquipementRepository {
 
     return result.modifiedCount > 0;
   };
+
+  static getStats = async () => {
+    const [total, actifs, inactifs] = await Promise.all([
+      typeEquipementModel.countDocuments({ deletedAt: null }),
+      typeEquipementModel.countDocuments({ deletedAt: null, isActive: true }),
+      typeEquipementModel.countDocuments({ deletedAt: null, isActive: false }),
+    ]);
+    return { total, actifs, inactifs };
+  };
 }

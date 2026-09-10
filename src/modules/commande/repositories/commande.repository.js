@@ -103,4 +103,47 @@ export class CommandeRepository {
 
     return document ? document : null;
   };
+
+  static getStats = async () => {
+    const [
+      total,
+      brouillon,
+      emises,
+      partiellementRecues,
+      recues,
+      annulees,
+      montantTotalAggregation,
+      dernieresCommandes,
+    ] = await Promise.all([
+      CommandeModel.countDocuments({ deletedAt: null }),
+      CommandeModel.countDocuments({ status: "BROUILLON", deletedAt: null }),
+      CommandeModel.countDocuments({ status: "EMISE", deletedAt: null }),
+      CommandeModel.countDocuments({ status: "PARTIELLEMENT_RECUE", deletedAt: null }),
+      CommandeModel.countDocuments({ status: "RECUE", deletedAt: null }),
+      CommandeModel.countDocuments({ status: "ANNULEE", deletedAt: null }),
+      CommandeModel.aggregate([
+        { $match: { deletedAt: null } },
+        { $group: { _id: null, total: { $sum: "$prixtotal" } } },
+      ]),
+      CommandeModel.find({ deletedAt: null })
+        .populate('fournisseur', 'nom tel email')
+        .populate('demandeur', 'nom prenom username')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+    ]);
+
+    return {
+      total,
+      parStatut: {
+        brouillon,
+        emises,
+        partiellementRecues,
+        recues,
+        annulees,
+      },
+      montantTotal: montantTotalAggregation[0]?.total ?? 0,
+      dernieresCommandes,
+    };
+  };
 }

@@ -179,4 +179,8 @@ export class EquipementService {
       );
     }
   };
+
+  static getStats = async () => {
+    return EquipementRepository.getStats();
+  };
 }

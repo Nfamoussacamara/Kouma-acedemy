@@ -105,17 +105,18 @@ export class TypeEquipementService {
 
   };
 
-    static toggleTypeEquipementStatus = async (id, { isActive }) => {
-      if (!isValidObjectId(id)) {
-        throw new ValidationError("Identifiant du type d'équipement invalide");
-      }
-      const updated = await typeEquipementRepository.updateStatus(id, { isActive });
-      if (!updated) {
-        throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
-      }
-      return updated;
-    };
+  static toggleTypeEquipementStatus = async (id, { isActive }) => {
+    if (!isValidObjectId(id)) {
+      throw new ValidationError("Identifiant du type d'équipement invalide");
+    }
+    const updated = await typeEquipementRepository.updateStatus(id, { isActive });
+    if (!updated) {
+      throw new NotFoundError(`Type d'équipement ${id} non trouvé`);
+    }
+    return updated;
+  };
 
-
-
+  static getStats = async () => {
+    return typeEquipementRepository.getStats();
+  };
 }

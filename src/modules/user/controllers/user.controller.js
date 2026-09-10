@@ -7,6 +7,11 @@ export class UserController {
     const result = await UserService.listUsers(req.query, currentUserId);
     res.json({ success: true, ...result });
   });
+
+  static getStats = asyncHandler(async (req, res) => {
+    const data = await UserService.getStats();
+    res.json({ success: true, data });
+  });
   
 
   static getById = asyncHandler(async (req, res) => {

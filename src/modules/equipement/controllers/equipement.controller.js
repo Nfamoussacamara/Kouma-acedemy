@@ -7,6 +7,11 @@ export class EquipementController {
     res.json({ success: true, ...result });
   });
 
+  static getStats = asyncHandler(async (req, res) => {
+    const data = await EquipementService.getStats();
+    res.json({ success: true, data });
+  });
+
   static getById = asyncHandler(async (req, res) => {
     const data = await EquipementService.getEquipementById(req.params.id);
     res.json({ success: true, data });

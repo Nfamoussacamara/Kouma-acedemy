@@ -26,6 +26,12 @@ export function createEquipementRoutes() {
     EquipementController.list
   );
 
+  router.get('/stats',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(['Admin', 'Utilisateur']),
+    EquipementController.getStats
+  );
 
   router.get('/:id',
     apiRateLimit,

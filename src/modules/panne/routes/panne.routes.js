@@ -32,6 +32,14 @@ export function createPanneRoutes() {
   );
 
   router.get(
+    "/stats",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
+    PanneController.getStats
+  );
+
+  router.get(
     "/:id",
     apiRateLimit,
     auditlogmidleware,

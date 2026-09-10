@@ -76,4 +76,60 @@ export class PanneRepository {
       });
     return document ? document : null;
   };
+
+  static getLatestPannes = async (limit = 5) => {
+    return PanneModel.find({ deletedAt: null })
+      .populate("declarant", "username nom prenom tel structure_sanitaire")
+      .select("reference structure_sanitaire description type_panne niveau_urgence statut besoin_intervention createdAt declarant")
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+  };
+
+  static getStatsByStructure = async () => {
+    const result = await PanneModel.aggregate([
+      { $match: { deletedAt: null, structure_sanitaire: { $ne: null } } },
+      { $group: { _id: "$structure_sanitaire", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+    return result.map((item) => ({
+      structure: item._id,
+      total: item.count,
+    }));
+  };
+
+  static getStats = async (filter = {}) => {
+    const finalFilter = { ...filter, deletedAt: null };
+    const [
+      total,
+      nouvelles,
+      enAttente,
+      enCours,
+      resolues,
+      cloturees,
+      urgentes,
+      critiques,
+    ] = await Promise.all([
+      PanneModel.countDocuments(finalFilter),
+      PanneModel.countDocuments({ ...finalFilter, statut: "NOUVELLE" }),
+      PanneModel.countDocuments({ ...finalFilter, besoin_intervention: true }),
+      PanneModel.countDocuments({ ...finalFilter, statut: "EN_COURS" }),
+      PanneModel.countDocuments({ ...finalFilter, statut: "RESOLUE" }),
+      PanneModel.countDocuments({ ...finalFilter, statut: "CLOTUREE" }),
+      PanneModel.countDocuments({ ...finalFilter, niveau_urgence: { $in: ["Critique", "Élevé", "Elevé"] } }),
+      PanneModel.countDocuments({ ...finalFilter, niveau_urgence: "Critique" }),
+    ]);
+
+    return {
+      total,
+      nouvelles,
+      enAttente,
+      besoinIntervention: enAttente,
+      enCours,
+      resolues,
+      cloturees,
+      urgentes,
+      critiques,
+    };
+  };
 }

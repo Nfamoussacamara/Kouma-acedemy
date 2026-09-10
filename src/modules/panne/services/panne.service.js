@@ -79,6 +79,22 @@ export class PanneService {
     };
   };
 
+  static getStats = async (user = {}) => {
+    const filter = {};
+    if (user?.type === "Utilisateur") {
+      filter.declarant = user.id;
+    }
+    return PanneRepository.getStats(filter);
+  };
+
+  static getLatestPannes = async (limit = 5) => {
+    return PanneRepository.getLatestPannes(limit);
+  };
+
+  static getStatsByStructure = async () => {
+    return PanneRepository.getStatsByStructure();
+  };
+
   static getCommandesForPanne = async (panneId) => {
     return CommandeModel.find({ panne: panneId, deletedAt: null })
       .populate('fournisseur')

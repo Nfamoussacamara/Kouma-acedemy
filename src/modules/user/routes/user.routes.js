@@ -43,6 +43,13 @@ export function createUserRoutes() {
     UserController.updateMePassword
   );
 
+  router.get('/stats',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    UserController.getStats
+  );
+
   router.get('/:id',
     apiRateLimit,
     auditlogmidleware,
