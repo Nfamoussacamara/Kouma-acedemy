@@ -14,13 +14,6 @@ export function createDashboardRoutes() {
         DashboardController.getDashboardStats
     );
 
-    router.get('/user-stats',
-        apiRateLimit,
-        authMiddleware,
-        requireRole(['Admin', 'Utilisateur']),
-        DashboardController.getMyStats
-    );
-
     router.get('/charts/monthly',
         apiRateLimit,
         authMiddleware,
