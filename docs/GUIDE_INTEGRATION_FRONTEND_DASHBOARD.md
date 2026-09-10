@@ -11,13 +11,13 @@
 
 1. Contexte & Architecture des Tableaux de Bord
 2. Matrice des Droits et des Endpoints
-3. Endpoint 1 : Statistiques Globales (GET /api/v1/dashboard)
+3. Endpoint 1 : Tableau de Bord Global Admin (GET /api/v1/dashboard)
    - 3.1 Droits & Paramètres
    - 3.2 Structure exacte de la réponse
    - 3.3 Description détaillée des métriques
    - 3.4 Conseils d'intégration UI
-4. Endpoint 2 : Statistiques Personnelles Utilisateur (GET /api/v1/dashboard/user-stats)
-   - 4.1 Droits & Paramètres
+4. Endpoint 2 : Statistiques Utilisateur / Pannes (GET /api/v1/pannes/stats)
+   - 4.1 Droits & Filtrage automatique
    - 4.2 Structure exacte de la réponse
    - 4.3 Description détaillée des métriques
    - 4.4 Conseils d'intégration UI
@@ -32,21 +32,47 @@
 
 ## 1. Contexte & Architecture des Tableaux de Bord
 
-Le backend met à disposition des endpoints dédiés aux tableaux de bord :
+Le backend met à disposition des endpoints optimisés et décentralisés :
 
-1. Vue Globale : indicateurs opérationnels complets du parc hospitalier (utilisateurs, équipements, fournisseurs, commandes par statut et montants, pannes globales, répartition par hôpital, équipements en panne et les 5 derniers signalements).
-2. Vue Personnelle (`/user-stats`) : indicateurs filtrés automatiquement sur l'utilisateur connecté via son jeton JWT (ses déclarations, pannes critiques, demandes d'intervention, ses 5 derniers signalements).
-3. Vue Analytique Mensuelle (`/charts/monthly`) : série chronologique complète sur 12 mois (Janvier à Décembre) pour tracer l'évolution des pannes (totales vs résolues) et des commandes (nombre et montants engagés).
+1. **Dashboard Global (`/api/v1/dashboard`)** : indicateurs opérationnels complets du parc hospitalier (utilisateurs, équipements, fournisseurs, commandes par statut et montants, pannes globales, répartition par hôpital, équipements en panne et les 5 derniers signalements). Réservé à l'**Admin**.
+2. **Dashboard Graphiques (`/api/v1/dashboard/charts/monthly`)** : série chronologique complète sur 12 mois (Janvier à Décembre) pour tracer l'évolution des pannes (totales vs résolues) et des commandes (nombre et montants engagés). Réservé à l'**Admin**.
+3. **Statistiques Utilisateur (`/api/v1/pannes/stats`)** : indicateurs filtrés automatiquement sur l'utilisateur connecté via son jeton JWT (ses déclarations, urgences, demandes d'intervention, en cours, résolues). Sert à la fois pour la vue d'accueil utilisateur et pour la page de gestion des pannes.
 
 ---
 
 ## 2. Matrice des Droits et des Endpoints
 
+### 2.1 Tableaux de Bord Généraux (Admin)
 | Endpoint | Méthode | Rôles Autorisés | Description |
 | :--- | :--- | :--- | :--- |
-| `/api/v1/dashboard` | GET | `Admin` | Vue globale complète du système (KPIs, parcs, pannes, commandes) |
-| `/api/v1/dashboard/user-stats` | GET | `Admin`, `Utilisateur` | Statistiques personnelles de l'utilisateur connecté |
+| `/api/v1/dashboard` | GET | `Admin` | Vue globale complète du système (KPIs multi-modules) |
 | `/api/v1/dashboard/charts/monthly` | GET | `Admin` | Données temporelles sur 12 mois (pannes et commandes) |
+
+### 2.2 Statistiques par Section / Module (Idéal pour les pages Frontend)
+| Endpoint | Méthode | Rôles Autorisés | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/v1/pannes/stats` | GET | `Admin`, `Utilisateur` | KPIs pannes : `total`, `nouvelles`, `enAttente`, `enCours`, `resolues`, `cloturees`, `urgentes`, `critiques` |
+| `/api/v1/commandes/stats` | GET | `Admin` | KPIs des commandes (totaux par statut, montant total engagé) |
+| `/api/v1/equipements/stats` | GET | `Admin`, `Utilisateur` | KPIs des équipements (actifs, inactifs, valeur totale, en panne) |
+| `/api/v1/fournisseurs/stats` | GET | `Admin` | KPIs des fournisseurs (total, actifs/inactifs, montant global) |
+| `/api/v1/users/stats` | GET | `Admin` | KPIs des utilisateurs (total, par rôle, actifs/inactifs) |
+
+#### Format de réponse `GET /api/v1/pannes/stats` :
+```json
+{
+  "success": true,
+  "data": {
+    "total": 54,        // Total déclaré (personnel pour Utilisateur, global pour Admin)
+    "nouvelles": 10,    // Nouvelles — à traiter
+    "enAttente": 8,     // En attente d'intervention sur site (besoin_intervention)
+    "enCours": 5,       // En cours de réparation
+    "resolues": 30,     // Résolues
+    "cloturees": 5,     // Clôturées
+    "urgentes": 15,     // Priorité urgente (Critique ou Élevé)
+    "critiques": 8      // Priorité strictement Critique
+  }
+}
+```
 
 Toutes ces requêtes nécessitent l'envoi du jeton JWT dans l'en-tête HTTP :
 ```http
@@ -165,14 +191,17 @@ Authorization: Bearer <access_token>
 
 ---
 
-## 4. Endpoint 2 : Statistiques Personnelles Utilisateur (GET /api/v1/dashboard/user-stats)
+## 4. Endpoint 2 : Statistiques Utilisateur / Pannes (GET /api/v1/pannes/stats)
 
-### 4.1 Droits & Paramètres
+### 4.1 Droits & Filtrage automatique
 
-- URL : `/api/v1/dashboard/user-stats`
+- URL : `/api/v1/pannes/stats`
 - Méthode : `GET`
 - Rôles autorisés : `Utilisateur`, `Admin`
-- Paramètres : Aucun (l'utilisateur est identifié automatiquement via son JWT).
+- Paramètres : Aucun
+- **Filtrage automatique** :
+  - Si l'utilisateur connecté a le rôle `Utilisateur`, le backend filtre automatiquement sur `declarant: user.id`. Il ne reçoit que ses propres statistiques.
+  - Si l'utilisateur a le rôle `Admin`, il reçoit les statistiques globales des pannes.
 
 ### 4.2 Structure exacte de la réponse (200 OK)
 
@@ -180,41 +209,32 @@ Authorization: Bearer <access_token>
 {
   "success": true,
   "data": {
-    "totalPannes": 48,
-    "pannesNouvelles": 48,
-    "pannesCritiques": 36,
-    "pannesEnCours": 0,
-    "pannesResolues": 0,
-    "pannesCloturees": 0,
+    "total": 48,
+    "nouvelles": 48,
+    "enAttente": 46,
     "besoinIntervention": 46,
-    "dernieresPannes": [
-      {
-        "_id": "6a8c5582818af6ef475918f3",
-        "reference": "PA-HRB-0003-2408",
-        "structure_sanitaire": "HOPITAL REGIONAL DE BOKE",
-        "description": "Arrêt complet du serveur de gestion",
-        "type_panne": "Espace/Système",
-        "niveau_urgence": "Critique",
-        "statut": "NOUVELLE",
-        "besoin_intervention": true,
-        "createdAt": "2026-08-24T14:30:26.486Z"
-      }
-    ]
+    "enCours": 0,
+    "resolues": 0,
+    "cloturees": 0,
+    "urgentes": 36,
+    "critiques": 36
   }
 }
 ```
 
+> **Note :** Les 5 dernières pannes (`dernieresPannes`) et la répartition par structure (`repartitionParStructure`) ne sont **pas** présentes ici : elles sont réservées exclusivement au Dashboard Admin global (`GET /api/v1/dashboard`).
+
 ### 4.3 Description détaillée des métriques
 
 Toutes ces valeurs concernent uniquement les déclarations faites par l'utilisateur connecté :
-- `totalPannes` : Nombre total de pannes qu'il a signalées.
-- `pannesNouvelles` : Ses déclarations en attente.
-- `pannesCritiques` : Ses signalements classés comme critiques.
-- `pannesEnCours` : Ses signalements en cours d'intervention.
-- `pannesResolues` : Ses pannes réparées.
-- `pannesCloturees` : Ses pannes clôturées.
-- `besoinIntervention` : Ses pannes attendant un déplacement technique.
-- `dernieresPannes` : Ses 5 dernières déclarations (incluant `reference`, `structure_sanitaire`, `description`, `niveau_urgence`, `statut`, `createdAt`).
+- `total` : Nombre total de pannes qu'il a signalées.
+- `nouvelles` : Ses déclarations au statut `NOUVELLE` (à traiter).
+- `enAttente` / `besoinIntervention` : Ses pannes nécessitant une intervention (`besoin_intervention === true`).
+- `enCours` : Ses signalements en cours de prise en charge (`EN_COURS`).
+- `resolues` : Ses pannes réparées (`RESOLUE`).
+- `cloturees` : Ses pannes clôturées (`CLOTUREE`).
+- `urgentes` : Ses signalements à priorité urgente (`Critique` ou `Élevé`).
+- `critiques` : Ses signalements strictement classés `Critique`.
 
 ---
 
@@ -305,5 +325,6 @@ Lors du `POST /pannes`, les champs `reference`, `structure_sanitaire` et `declar
    - En paramètre de requête pour lister les pannes : minuscules acceptées (`?statut=nouvelle`).
 4. **Gestion des rôles :**
    - Les deux rôles officiels sont `"Admin"` et `"Utilisateur"`.
-   - Tous les endpoints de dashboard sont accessibles aussi bien pour `"Admin"` que pour `"Utilisateur"`.
+   - `GET /api/v1/dashboard` et `GET /api/v1/dashboard/charts/monthly` sont strictement réservés au rôle `"Admin"`.
+   - `GET /api/v1/pannes/stats` est accessible aux rôles `"Utilisateur"` et `"Admin"`.
 5. **Tableau des 12 mois :** Pas besoin de combler les mois vides, le backend renvoie toujours 12 entrées avec des valeurs à 0 si aucun événement n'a eu lieu.
