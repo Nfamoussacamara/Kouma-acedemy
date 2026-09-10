@@ -22,6 +22,13 @@ export function createFournisseurRoutes() {
     FournisseurController.list
   );
 
+  router.get('/stats',
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(['Admin']),
+    FournisseurController.getStats
+  );
+
   router.get('/:id',
     apiRateLimit,
     auditlogmidleware,

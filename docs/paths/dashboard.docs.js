@@ -98,61 +98,6 @@ export const dashboardPaths = {
     },
   },
 
-  '/dashboard/user-stats': {
-    get: {
-      tags: ['Dashboard'],
-      summary: 'Obtenir les statistiques personnelles de l’utilisateur connecté',
-      description: 'Retourne le bilan des pannes déclarées par l’utilisateur connecté (par statut, urgence, besoin d’intervention et les 5 dernières pannes). Accessible aux rôles Admin et Utilisateur.',
-      security: [{ bearerAuth: [] }],
-      responses: {
-        200: {
-          description: 'Statistiques personnelles de l’utilisateur',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  success: { type: 'boolean', example: true },
-                  data: {
-                    type: 'object',
-                    properties: {
-                      totalPannes: { type: 'integer', example: 8 },
-                      pannesNouvelles: { type: 'integer', example: 2 },
-                      pannesCritiques: { type: 'integer', example: 1 },
-                      pannesEnCours: { type: 'integer', example: 3 },
-                      pannesResolues: { type: 'integer', example: 1 },
-                      pannesCloturees: { type: 'integer', example: 1 },
-                      besoinIntervention: { type: 'integer', example: 4 },
-                      dernieresPannes: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            _id: { type: 'string', example: '66dc6497f1f0a2001e3b5e40' },
-                            reference: { type: 'string', example: 'PAN-2026-003' },
-                            structure_sanitaire: { type: 'string', example: 'HOPITAL REGIONAL DE LABE' },
-                            description: { type: 'string', example: 'Câble d’alimentation défectueux' },
-                            type_panne: { type: 'string', example: 'Equipement' },
-                            niveau_urgence: { type: 'string', example: 'Critique' },
-                            statut: { type: 'string', example: 'EN_COURS' },
-                            besoin_intervention: { type: 'boolean', example: true },
-                            createdAt: { type: 'string', format: 'date-time' },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        401: { description: 'Non authentifié' },
-        403: { description: 'Accès interdit' },
-      },
-    },
-  },
-
   '/dashboard/charts/monthly': {
     get: {
       tags: ['Dashboard'],

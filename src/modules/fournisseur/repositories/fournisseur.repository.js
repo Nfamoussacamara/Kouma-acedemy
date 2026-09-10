@@ -64,4 +64,35 @@ export class FournisseurRepository {
     );
     return result.modifiedCount > 0;
   };
+
+  static getStats = async () => {
+    const [
+      total,
+      actifs,
+      inactifs,
+      montantTotalAggregation,
+      derniersFournisseurs,
+    ] = await Promise.all([
+      FournisseurModel.countDocuments({ deletedAt: null }),
+      FournisseurModel.countDocuments({ deletedAt: null, isActive: true }),
+      FournisseurModel.countDocuments({ deletedAt: null, isActive: false }),
+      FournisseurModel.aggregate([
+        { $match: { deletedAt: null } },
+        { $group: { _id: null, total: { $sum: "$montant" } } },
+      ]),
+      FournisseurModel.find({ deletedAt: null })
+        .select("nom contact adresse montant isActive createdAt")
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+    ]);
+
+    return {
+      total,
+      actifs,
+      inactifs,
+      montantTotal: montantTotalAggregation[0]?.total ?? 0,
+      derniersFournisseurs,
+    };
+  };
 }

@@ -86,4 +86,30 @@ export class UserRepository {
       { $inc: { tokenVersion: 1 } }
     );
   };
+
+  static getStats = async () => {
+    const [
+      total,
+      admins,
+      utilisateurs,
+      actifs,
+      inactifs,
+    ] = await Promise.all([
+      UserModel.countDocuments({ deletedAt: null }),
+      UserModel.countDocuments({ deletedAt: null, type: "Admin" }),
+      UserModel.countDocuments({ deletedAt: null, type: "Utilisateur" }),
+      UserModel.countDocuments({ deletedAt: null, isActive: true }),
+      UserModel.countDocuments({ deletedAt: null, isActive: false }),
+    ]);
+
+    return {
+      total,
+      parRole: {
+        admins,
+        utilisateurs,
+      },
+      actifs,
+      inactifs,
+    };
+  };
 }

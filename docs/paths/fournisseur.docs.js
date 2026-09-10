@@ -1,4 +1,39 @@
 export const fournisseurPaths = {
+  '/fournisseurs/stats': {
+    get: {
+      tags: ['Fournisseurs'],
+      summary: 'Obtenir les statistiques des fournisseurs (Admin)',
+      description: 'Retourne le nombre total de fournisseurs, le statut actif/inactif, le montant cumulé et les 5 derniers créés.',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Statistiques des fournisseurs récupérées avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      total: { type: 'integer', example: 10 },
+                      actifs: { type: 'integer', example: 8 },
+                      inactifs: { type: 'integer', example: 2 },
+                      montantTotal: { type: 'number', example: 8500000 },
+                      derniersFournisseurs: { type: 'array', items: { type: 'object' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Accès réservé aux administrateurs' },
+      },
+    },
+  },
   '/fournisseurs': {
     get: {
       tags: ['Fournisseurs'],

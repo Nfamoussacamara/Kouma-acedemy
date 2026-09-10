@@ -42,6 +42,41 @@ export const pannePaths = {
       },
     },
   },
+  '/pannes/stats': {
+    get: {
+      tags: ['Pannes'],
+      summary: 'Obtenir les statistiques des pannes',
+      description: 'Accessible aux rôles Admin (vue globale) et Utilisateur (filtré automatiquement sur ses déclarations).',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Statistiques des pannes récupérées avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      total: { type: 'integer', example: 54, description: 'Mes pannes — total déclaré' },
+                      nouvelles: { type: 'integer', example: 10, description: 'Nouvelles — à traiter' },
+                      enAttente: { type: 'integer', example: 8, description: 'En attente — en attente de prise en charge' },
+                      enCours: { type: 'integer', example: 5, description: 'En cours — actuellement traitées' },
+                      resolues: { type: 'integer', example: 30, description: 'Résolues — réparées' },
+                      urgentes: { type: 'integer', example: 15, description: 'Urgentes — priorité urgente' },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Non authentifié' },
+      },
+    },
+  },
   '/pannes': {
     get: {
       tags: ['Pannes'],
@@ -225,3 +260,4 @@ export const pannePaths = {
     },
   },
 };
+

@@ -415,4 +415,8 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée ou déjà supprimée`);
     }
   };
+
+  static getStats = async () => {
+    return CommandeRepository.getStats();
+  };
 }

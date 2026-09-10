@@ -7,6 +7,11 @@ export class FournisseurController {
     res.json({ success: true, ...result });
   });
 
+  static getStats = asyncHandler(async (req, res) => {
+    const data = await FournisseurService.getStats();
+    res.json({ success: true, data });
+  });
+
   static getById = asyncHandler(async (req, res) => {
     const data = await FournisseurService.getFournisseurById(req.params.id);
     res.json({ success: true, data });

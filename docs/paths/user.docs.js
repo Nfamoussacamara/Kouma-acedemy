@@ -1,6 +1,46 @@
 import { STRUCTURE_SANITAIRE } from '../../src/modules/panne/panne.constants.js';
 
 export const userPaths = {
+  '/users/stats': {
+    get: {
+      tags: ['Utilisateurs'],
+      summary: 'Obtenir les statistiques des utilisateurs (Admin)',
+      description: 'Retourne le nombre total d\'utilisateurs, répartition par rôles (Admin / Utilisateur), statuts et les 5 derniers comptes.',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Statistiques des utilisateurs récupérées avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      total: { type: 'integer', example: 12 },
+                      parRole: {
+                        type: 'object',
+                        properties: {
+                          admins: { type: 'integer', example: 2 },
+                          utilisateurs: { type: 'integer', example: 10 },
+                        },
+                      },
+                      actifs: { type: 'integer', example: 11 },
+                      inactifs: { type: 'integer', example: 1 },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Accès réservé aux administrateurs' },
+      },
+    },
+  },
   '/users': {
     get: {
       tags: ['Utilisateurs'],

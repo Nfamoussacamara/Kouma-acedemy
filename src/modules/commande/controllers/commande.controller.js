@@ -7,6 +7,11 @@ export class CommandeController {
     res.json({ success: true, ...result });
   });
 
+  static getStats = asyncHandler(async (req, res) => {
+    const data = await CommandeService.getStats();
+    res.json({ success: true, data });
+  });
+
   static getCommandeById = asyncHandler(async (req, res) => {
     const data = await CommandeService.getCommandeById(req.params.id);
     res.json({ success: true, data });

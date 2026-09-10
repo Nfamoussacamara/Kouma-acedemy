@@ -1,4 +1,49 @@
 export const equipementPaths = {
+  '/equipements/stats': {
+    get: {
+      tags: ['Equipements'],
+      summary: 'Obtenir les statistiques des équipements',
+      description: 'Accessible aux rôles Admin et Utilisateur : total des équipements, actifs, inactifs, valeur totale et équipements en panne.',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Statistiques des équipements récupérées avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      total: { type: 'integer', example: 45 },
+                      actifs: { type: 'integer', example: 40 },
+                      inactifs: { type: 'integer', example: 5 },
+                      montantTotal: { type: 'number', example: 12500000 },
+                      equipementsEnPanne: { type: 'integer', example: 3 },
+                      repartitionParType: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            typeId: { type: 'string' },
+                            nom: { type: 'string', example: 'Informatique' },
+                            total: { type: 'integer', example: 15 },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Non authentifié' },
+      },
+    },
+  },
   '/equipements': {
     get: {
       tags: ['Equipements'],

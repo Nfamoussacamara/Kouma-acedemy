@@ -1,4 +1,47 @@
 export const commandePaths = {
+  '/commandes/stats': {
+    get: {
+      tags: ['Commandes'],
+      summary: 'Obtenir les statistiques des commandes (Admin)',
+      description: 'Retourne les KPIs des commandes : totaux par statut, montant global engagé et les 5 dernières commandes.',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        200: {
+          description: 'Statistiques des commandes récupérées avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      total: { type: 'integer', example: 12 },
+                      parStatut: {
+                        type: 'object',
+                        properties: {
+                          brouillon: { type: 'integer', example: 2 },
+                          emises: { type: 'integer', example: 3 },
+                          partiellementRecues: { type: 'integer', example: 2 },
+                          recues: { type: 'integer', example: 4 },
+                          annulees: { type: 'integer', example: 1 },
+                        },
+                      },
+                      montantTotal: { type: 'number', example: 2450000 },
+                      dernieresCommandes: { type: 'array', items: { type: 'object' } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Accès réservé aux administrateurs' },
+      },
+    },
+  },
   '/commandes': {
     get: {
       tags: ['Commandes'],

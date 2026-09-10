@@ -191,4 +191,8 @@ export class UserService {
       throw new NotFoundError(`Utilisateur ${id} non trouvé`);
     }
   };
+
+  static getStats = async () => {
+    return UserRepository.getStats();
+  };
 };

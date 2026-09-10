@@ -8,6 +8,11 @@ export class PanneController {
     res.json({ success: true, ...result });
   });
 
+  static getStats = asyncHandler(async (req, res) => {
+    const data = await PanneService.getStats(req.user);
+    res.json({ success: true, data });
+  });
+
   static getPanneById = asyncHandler(async (req, res) => {
     const data = await PanneService.getPanneById(req.params.id);
     res.json({ success: true, data });

@@ -111,4 +111,8 @@ export class FournisseurService {
     const sumResult = await EquipementRepository.sumPricesByProvider(fournisseurId);
     await FournisseurRepository.updateMontant(fournisseurId, sumResult);
   };
+
+  static getStats = async () => {
+    return FournisseurRepository.getStats();
+  };
 }
