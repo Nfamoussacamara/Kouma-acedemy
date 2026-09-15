@@ -1,5 +1,3 @@
-import { STATUT_COMMANDE, STATUT_PAIEMENT } from '../../src/modules/commande/commande.constance.js';
-
 export const commandePaths = {
   '/commandes/stats': {
     get: {
