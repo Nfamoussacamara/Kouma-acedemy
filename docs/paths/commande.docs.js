@@ -1,3 +1,5 @@
+import { STATUT_COMMANDE, STATUT_PAIEMENT } from '../../src/modules/commande/commande.constance.js';
+
 export const commandePaths = {
   '/commandes/stats': {
     get: {
@@ -358,6 +360,242 @@ export const commandePaths = {
         401: { description: 'Non authentifié' },
         403: { description: 'Non autorisé (Admin requis)' },
         404: { description: 'Commande ou réception introuvable' }
+      }
+    }
+  },
+  '/commandes/{commandeId}/paiements': {
+    post: {
+      tags: ['Commandes'],
+      summary: 'Enregistrer un paiement pour une commande (Admin)',
+      description: 'Ajoute un sous-document paiement à la commande, génère un numéro de reçu unique (PAY-YYYYMMDD-XXXX) et actualise le statut de paiement de la commande (NON_PAYE, PARTIELLEMENT_PAYE, PAYE).',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'commandeId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB de la commande'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['montant'],
+              properties: {
+                montant: {
+                  type: 'number',
+                  minimum: 1,
+                  example: 50000,
+                  description: 'Montant versé (doit être supérieur à 0)'
+                },
+                date: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'Date du versement (optionnelle, défaut: maintenant)'
+                }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: {
+          description: 'Paiement enregistré avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { type: 'object', description: 'La commande mise à jour avec le nouveau paiement' },
+                  message: { type: 'string', example: 'Paiement enregistré avec succès' }
+                }
+              }
+            }
+          }
+        },
+        400: { description: 'Données de validation invalides' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Commande non trouvée' },
+        409: { description: 'Commande annulée ou montant total supérieur au montant de la commande' }
+      }
+    }
+  },
+  '/commandes/{commandeId}/paiements/{paiementId}': {
+    get: {
+      tags: ['Commandes'],
+      summary: 'Consulter un paiement spécifique (Admin)',
+      description: 'Récupère les détails d\'un paiement rattaché à une commande.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'commandeId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB de la commande'
+        },
+        {
+          name: 'paiementId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB du paiement'
+        }
+      ],
+      responses: {
+        200: {
+          description: 'Détails du paiement récupérés avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      _id: { type: 'string' },
+                      reference: { type: 'string', example: 'PAY-20260915-0001' },
+                      montant: { type: 'number', example: 50000 },
+                      date: { type: 'string', format: 'date-time' },
+                      payePar: {
+                        type: 'object',
+                        properties: {
+                          _id: { type: 'string' },
+                          nom: { type: 'string' },
+                          prenom: { type: 'string' },
+                          username: { type: 'string' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        400: { description: 'Identifiant invalide' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Paiement ou commande non trouvé' }
+      }
+    },
+    patch: {
+      tags: ['Commandes'],
+      summary: 'Modifier un paiement (Admin)',
+      description: 'Met à jour le montant et/ou la date d\'un paiement et recalcule le statut de paiement de la commande.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'commandeId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB de la commande'
+        },
+        {
+          name: 'paiementId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB du paiement'
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['montant'],
+              properties: {
+                montant: {
+                  type: 'number',
+                  minimum: 1,
+                  example: 60000,
+                  description: 'Nouveau montant'
+                },
+                date: {
+                  type: 'string',
+                  format: 'date-time',
+                  description: 'Nouvelle date du paiement'
+                }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: 'Paiement mis à jour avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { type: 'object' },
+                  message: { type: 'string', example: 'Paiement mis à jour avec succès' }
+                }
+              }
+            }
+          }
+        },
+        400: { description: 'Données de validation invalides' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Paiement ou commande non trouvé' },
+        409: { description: 'Commande annulée ou montant cumulé supérieur au prix total' }
+      }
+    },
+    delete: {
+      tags: ['Commandes'],
+      summary: 'Supprimer un paiement (Admin)',
+      description: 'Supprime un paiement d\'une commande et recalcule son statut de paiement.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'commandeId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB de la commande'
+        },
+        {
+          name: 'paiementId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+          description: 'Identifiant MongoDB du paiement'
+        }
+      ],
+      responses: {
+        200: {
+          description: 'Paiement supprimé avec succès',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: { type: 'boolean', example: true },
+                  data: { type: 'object' },
+                  message: { type: 'string', example: 'Paiement supprimé avec succès' }
+                }
+              }
+            }
+          }
+        },
+        400: { description: 'Identifiant invalide' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé (Admin requis)' },
+        404: { description: 'Paiement ou commande non trouvé' },
+        409: { description: 'Impossible de supprimer un paiement d\'une commande annulée' }
       }
     }
   }
