@@ -16,12 +16,6 @@ export function requireRole(role) {
   };
 }
 
-
-/**
- * Middleware vérifiant si l'utilisateur est un Admin ou le propriétaire de la ressource.
- * Suppose que l'ID de la ressource est passé dans req.params.id.
- */
-
 export function requireAdminOrOwner() {
   return (req, _res, next) => {
     if (!req.user) {
