@@ -1,4 +1,5 @@
 import { mongoose } from "../../../../../infrastructure/database/mongoose.js";
+import { STATUT_COMMANDE, STATUT_PAIEMENT } from "../../../commande.constance.js";
 
 export const commandeSchema = new mongoose.Schema(
   {
@@ -120,9 +121,35 @@ export const commandeSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["BROUILLON", "EMISE", "PARTIELLEMENT_RECUE", "RECUE", "ANNULEE"],
-      default: "BROUILLON",
+      enum: Object.values(STATUT_COMMANDE),
+      default: STATUT_COMMANDE.BROUILLON,
     },
+
+    statusPaiement: {
+      type: String,
+      enum: Object.values(STATUT_PAIEMENT),
+      default: STATUT_PAIEMENT.NON_PAYE,
+    },
+
+    paiements: [
+      {
+        reference: {
+          type: String,
+        },
+        montant: {
+          type: Number,
+          required: true,
+        },
+        date: {
+          type: Date,
+          default: Date.now,
+        },
+        payePar: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+      },
+    ],
 
     prixtotal: {
       type: Number,

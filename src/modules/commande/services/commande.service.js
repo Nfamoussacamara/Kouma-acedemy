@@ -12,14 +12,15 @@ import { EquipementService } from "../../equipement/services/equipement.service.
 import { PanneRepository } from "../../panne/repositories/panne.repository.js";
 import { CounterService } from "./counter.service.js";
 import { createSearchFilter } from "../../../shared/utils/search.util.js";
+import { STATUT_COMMANDE } from "../commande.constance.js";
 
 const STATUS_MAP = {
-  brouillon: "BROUILLON",
-  emise: "EMISE",
-  partiellement_recue: "PARTIELLEMENT_RECUE",
-  recue: "RECUE",
-  annulee: "ANNULEE",
-  annulée: "ANNULEE",
+  brouillon: STATUT_COMMANDE.BROUILLON,
+  emise: STATUT_COMMANDE.EMISE,
+  partiellement_recue: STATUT_COMMANDE.PARTIELLEMENT_RECUE,
+  recue: STATUT_COMMANDE.RECUE,
+  annulee: STATUT_COMMANDE.ANNULEE,
+  annulée: STATUT_COMMANDE.ANNULEE,
 };
 
 function normalizeStatus(status) {
@@ -191,7 +192,7 @@ export class CommandeService {
     );
 
     const reference = await CounterService.nextCommandeNumber();
-    const targetStatus = dto.status ? normalizeStatus(dto.status) : "BROUILLON";
+    const targetStatus = dto.status ? normalizeStatus(dto.status) : STATUT_COMMANDE.BROUILLON;
 
     return CommandeRepository.createCommande({
       reference,
@@ -214,7 +215,7 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
-    if (commande.status === "RECUE" || commande.status === "ANNULEE") {
+    if (commande.status === STATUT_COMMANDE.RECUE || commande.status === STATUT_COMMANDE.ANNULEE) {
       throw new ConflictError(
         `Une commande au statut ${commande.status} ne peut plus être modifiée`
       );
@@ -332,7 +333,7 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
-    if (commande.status === "RECUE" || commande.status === "ANNULEE") {
+    if (commande.status === STATUT_COMMANDE.RECUE || commande.status === STATUT_COMMANDE.ANNULEE) {
       throw new ConflictError(
         `Impossible d'enregistrer une réception sur une commande au statut ${commande.status}`
       );
@@ -349,7 +350,7 @@ export class CommandeService {
       (e) => e.quantiteRecue === e.quantiteCommandee
     );
 
-    commande.status = toutRecu ? "RECUE" : "PARTIELLEMENT_RECUE";
+    commande.status = toutRecu ? STATUT_COMMANDE.RECUE : STATUT_COMMANDE.PARTIELLEMENT_RECUE;
     commande.prixtotal = computeTotal(commande.equipements);
 
     commande.receptions.push({
@@ -376,7 +377,7 @@ export class CommandeService {
 
     const targetStatus = normalizeStatus(status);
 
-    if (targetStatus === "ANNULEE") {
+    if (targetStatus === STATUT_COMMANDE.ANNULEE) {
       const aDejaRecu = commande.equipements.some((e) => e.quantiteRecue > 0);
       if (aDejaRecu) {
         throw new ConflictError(

@@ -4,6 +4,7 @@ import { authMiddleware } from '../../../middlewares/auth.middleware.js';
 import { requireRole } from '../../../middlewares/role.middleware.js';
 import { CommandeController } from '../controllers/commande.controller.js';
 import { FactureController } from '../controllers/facture.controller.js';
+import { PaiementController } from '../controllers/paiement.controller.js';
 import { idParamSchema } from '../../../validators/common.validator.js';
 import { validateFile } from '../../../middlewares/validate.file.midleware.js';
 import {
@@ -12,8 +13,11 @@ import {
   toggleStatusSchema,
   listCommandeQuerySchema,
   receptionCommandeSchema,
-  suggestEquipementsSchema,
   factureParamsSchema,
+  commandeIdParamSchema,
+  paiementParamsSchema,
+  createPaiementSchema,
+  updatePaiementSchema,
 } from '../validators/commande.validator.js';
 import { apiRateLimit } from '../../../middlewares/rate-limit.midleware.js';
 import { auditlogmidleware } from '../../../middlewares/logger.midleware.js';
@@ -91,14 +95,6 @@ export function createCommandeRoutes() {
     CommandeController.deleteCommande
   );
 
-  router.post(
-    "/suggestions-equipements",
-    apiRateLimit,
-    auditlogmidleware,
-    requireRole(["Admin"]),
-    validateBody(suggestEquipementsSchema),
-    CommandeController.suggestEquipements
-  );
 
   router.post(
     "/:commandeId/receptions/:receptionId/facture",
@@ -119,13 +115,42 @@ export function createCommandeRoutes() {
     FactureController.remove
   );
 
-  router.patch(
-    "/:commandeId/receptions/:receptionId/facture/restore",
+  router.get(
+    "/:commandeId/paiements/:paiementId",
     apiRateLimit,
     auditlogmidleware,
     requireRole(["Admin"]),
-    validateParams(factureParamsSchema),
-    FactureController.restore
+    validateParams(paiementParamsSchema),
+    PaiementController.getPaiementById
+  );
+
+  router.post(
+    "/:commandeId/paiements",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(commandeIdParamSchema),
+    validateBody(createPaiementSchema),
+    PaiementController.createPaiement
+  );
+
+  router.patch(
+    "/:commandeId/paiements/:paiementId",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(paiementParamsSchema),
+    validateBody(updatePaiementSchema),
+    PaiementController.updatePaiement
+  );
+
+  router.delete(
+    "/:commandeId/paiements/:paiementId",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin"]),
+    validateParams(paiementParamsSchema),
+    PaiementController.deletePaiement
   );
 
   return router;

@@ -2,6 +2,7 @@ import { CommandeController } from './controllers/commande.controller.js';
 import { createCommandeRoutes } from './routes/commande.routes.js';
 import { CommandeRepository } from './repositories/commande.repository.js';
 import { CommandeService } from './services/commande.service.js';
+import { PaiementService } from './services/paiement.service.js';
 
 /**
  * Composition root — module commande.
@@ -16,5 +17,6 @@ export function createCommandeModule() {
     routes,
     commandeRepository: CommandeRepository,
     commandeService: CommandeService,
+    paiementService: PaiementService,
   };
 }
