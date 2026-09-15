@@ -1,4 +1,5 @@
 import { CommandeModel } from '../infrastructure/persistence/models/Commande.model.js';
+import { STATUT_COMMANDE } from '../commande.constance.js';
 
 export class CommandeRepository {
   static getAllCommandes = async ({ skip, limit, filter = {} }) => {
@@ -116,11 +117,11 @@ export class CommandeRepository {
       dernieresCommandes,
     ] = await Promise.all([
       CommandeModel.countDocuments({ deletedAt: null }),
-      CommandeModel.countDocuments({ status: "BROUILLON", deletedAt: null }),
-      CommandeModel.countDocuments({ status: "EMISE", deletedAt: null }),
-      CommandeModel.countDocuments({ status: "PARTIELLEMENT_RECUE", deletedAt: null }),
-      CommandeModel.countDocuments({ status: "RECUE", deletedAt: null }),
-      CommandeModel.countDocuments({ status: "ANNULEE", deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.BROUILLON, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.EMISE, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.PARTIELLEMENT_RECUE, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.RECUE, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.ANNULEE, deletedAt: null }),
       CommandeModel.aggregate([
         { $match: { deletedAt: null } },
         { $group: { _id: null, total: { $sum: "$prixtotal" } } },
@@ -146,4 +147,59 @@ export class CommandeRepository {
       dernieresCommandes,
     };
   };
+
+  static async addPaiement(commandeId, paiement, statusPaiement) {
+    return CommandeModel.findByIdAndUpdate(
+      commandeId,
+      {
+        $push: {
+          paiements: paiement,
+        },
+        $set: {
+          statusPaiement,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+  }
+
+  static getPaiementById = async (commandeId, paiementId) => {
+    const commande = await CommandeModel.findOne(
+      { _id: commandeId, 'paiements._id': paiementId, deletedAt: null },
+    )
+      .populate('paiements.payePar', 'nom prenom username')
+      .lean();
+
+    if (!commande) return null;
+
+    return commande.paiements.find(
+      (p) => p._id.toString() === paiementId
+    ) ?? null;
+  };
+  static async updatePaiement(commandeId, paiementId, paiementData, statusPaiement) {
+    return CommandeModel.findOneAndUpdate(
+      { _id: commandeId, 'paiements._id': paiementId, deletedAt: null },
+      {
+        $set: {
+          'paiements.$.montant': paiementData.montant,
+          'paiements.$.date': paiementData.date,
+          statusPaiement,
+        },
+      },
+      { new: true, runValidators: true },
+    );
+  }
+  static async deletePaiement(commandeId, paiementId, statusPaiement) {
+    return CommandeModel.findOneAndUpdate(
+      { _id: commandeId, 'paiements._id': paiementId, deletedAt: null },
+      {
+        $pull: { paiements: { _id: paiementId } },
+        $set: { statusPaiement },
+      },
+      { new: true, runValidators: true },
+    );
+  }
 }

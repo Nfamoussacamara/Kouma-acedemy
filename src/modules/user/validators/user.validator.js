@@ -28,7 +28,7 @@ export const createUserSchema = yup.object({
   structure_sanitaire: yup
     .string()
     .oneOf(STRUCTURE_SANITAIRE, 'Structure sanitaire invalide')
-    .required('Structure sanitaire requise')
+    .optional()
     .transform((value) => (value ? value.toUpperCase() : value)),
 });
 

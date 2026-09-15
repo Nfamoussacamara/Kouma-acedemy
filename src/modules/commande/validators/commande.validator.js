@@ -1,19 +1,12 @@
 import * as yup from "yup";
+import { STATUT_COMMANDE } from "../commande.constance.js";
 
 const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 
 const VALID_STATUSES = [
-  "brouillon",
-  "emise",
-  "partiellement_recue",
-  "recue",
-  "annulee",
+  ...Object.values(STATUT_COMMANDE),
+  ...Object.values(STATUT_COMMANDE).map((s) => s.toLowerCase()),
   "annulée",
-  "BROUILLON",
-  "EMISE",
-  "PARTIELLEMENT_RECUE",
-  "RECUE",
-  "ANNULEE",
 ];
 
 const equipementInputSchema = yup.object({
@@ -122,31 +115,7 @@ export const receptionCommandeSchema = yup.object({
     .required("Le champ equipementsRecus est requis"),
 });
 
-export const suggestEquipementsSchema = yup.object({
-  equipements: yup
-    .array()
-    .of(
-      yup.object({
-        typeEquipement: yup
-          .string()
-          .trim()
-          .matches(objectIdRegex, "Format d'identifiant de type d'équipement invalide")
-          .nullable()
-          .optional(),
-        modele: yup.string()
-          .trim()
-          .nullable()
-          .optional(),
-      })
-      .test(
-        "equipement-non-vide",
-        "Un équipement doit contenir au moins une information (modele ou type d'équipement)",
-        (equipement) => !!(equipement.modele || equipement.typeEquipement)
-      )
-    )
-    .min(1, "Le tableau equipements doit contenir au moins un équipement")
-    .required("Le tableau equipements est requis"),
-});
+
 
 export const factureParamsSchema = yup.object({
   commandeId: yup
@@ -159,6 +128,51 @@ export const factureParamsSchema = yup.object({
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de réception invalide")
     .required("L'identifiant de réception est requis"),
+});
+
+export const commandeIdParamSchema = yup.object({
+  commandeId: yup
+    .string()
+    .trim()
+    .matches(objectIdRegex, "Format d'identifiant de commande invalide")
+    .required("L'identifiant de commande est requis"),
+});
+
+export const paiementParamsSchema = yup.object({
+  commandeId: yup
+    .string()
+    .trim()
+    .matches(objectIdRegex, "Format d'identifiant de commande invalide")
+    .required("L'identifiant de commande est requis"),
+  paiementId: yup
+    .string()
+    .trim()
+    .matches(objectIdRegex, "Format d'identifiant de paiement invalide")
+    .required("L'identifiant de paiement est requis"),
+});
+
+export const createPaiementSchema = yup.object({
+  montant: yup
+    .number()
+    .typeError("Le montant doit être un nombre")
+    .positive("Le montant doit être supérieur à 0")
+    .required("Le montant est requis"),
+  date: yup
+    .date()
+    .typeError("La date doit être valide")
+    .optional(),
+});
+
+export const updatePaiementSchema = yup.object({
+  montant: yup
+    .number()
+    .typeError("Le montant doit être un nombre")
+    .positive("Le montant doit être supérieur à 0")
+    .required("Le montant est requis"),
+  date: yup
+    .date()
+    .typeError("La date doit être valide")
+    .optional(),
 });
 
 

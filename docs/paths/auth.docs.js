@@ -63,18 +63,18 @@ export const authPaths = {
           'application/json': {
             schema: {
               type: 'object',
-              required: ['username', 'password', 'nom', 'prenom', 'type', 'structure_sanitaire'],
+              required: ['username', 'password', 'nom', 'prenom'],
               properties: {
                 username: { type: 'string' },
                 password: { type: 'string', minLength: 8 },
                 nom: { type: 'string' },
                 prenom: { type: 'string' },
                 tel: { type: 'string' },
-                type: { type: 'string', enum: ['Admin', 'Utilisateur'] },
+                type: { type: 'string', enum: ['Admin', 'Utilisateur'], default: 'Utilisateur' },
                 structure_sanitaire: {
                   type: 'string',
                   enum: STRUCTURE_SANITAIRE,
-                  description: 'Structure sanitaire de rattachement de l\'utilisateur (requise)',
+                  description: 'Structure sanitaire de rattachement de l\'utilisateur (optionnelle)',
                   example: 'HOPITAL REGIONAL DE LABE'
                 },
                 isActive: { type: 'boolean' },
