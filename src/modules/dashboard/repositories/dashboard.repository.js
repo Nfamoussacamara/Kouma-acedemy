@@ -22,7 +22,7 @@ class DashboardRepository {
             total: { $sum: 1 },
             resolues: {
               $sum: {
-                $cond: [{ $in: ["$statut", ["RESOLUE", "CLOTUREE"]] }, 1, 0],
+                $cond: [{ $eq: ["$statut", "resolue"] }, 1, 0],
               },
             },
           },

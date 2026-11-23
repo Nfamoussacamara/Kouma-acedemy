@@ -3,7 +3,7 @@ import { validateBody, validateParams, validateQuery } from '../../../middleware
 import { authMiddleware } from '../../../middlewares/auth.middleware.js';
 import { requireRole } from '../../../middlewares/role.middleware.js';
 import { CommandeController } from '../controllers/commande.controller.js';
-import { FactureController } from '../controllers/facture.controller.js';
+import { DocumentController } from '../controllers/document.controller.js';
 import { PaiementController } from '../controllers/paiement.controller.js';
 import { idParamSchema } from '../../../validators/common.validator.js';
 import { validateFile } from '../../../middlewares/validate.file.midleware.js';
@@ -30,7 +30,7 @@ export function createCommandeRoutes() {
   router.get('/',
     apiRateLimit,
     auditlogmidleware,
-    requireRole(['Admin']),
+    requireRole(['Admin', 'Utilisateur']),
     validateQuery(listCommandeQuerySchema),
     CommandeController.listCommandes);
 
@@ -51,7 +51,7 @@ export function createCommandeRoutes() {
     '/',
     apiRateLimit,
     auditlogmidleware,
-    requireRole(['Admin']),
+    requireRole(['Admin', 'Utilisateur']),
     validateBody(createCommandeSchema),
     CommandeController.createCommande
   );
@@ -95,6 +95,25 @@ export function createCommandeRoutes() {
     CommandeController.deleteCommande
   );
 
+  router.post(
+    "/:id/bon-signe",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
+    validateParams(idParamSchema),
+    validateFile.single('file'),
+    DocumentController.uploadBonSigne
+  );
+
+  router.delete(
+    "/:id/bon-signe",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
+    validateParams(idParamSchema),
+    DocumentController.deleteBonSigne
+  );
+
 
   router.post(
     "/:commandeId/receptions/:receptionId/facture",
@@ -103,7 +122,7 @@ export function createCommandeRoutes() {
     requireRole(["Admin"]),
     validateParams(factureParamsSchema),
     validateFile.single("file"),
-    FactureController.upload
+    DocumentController.uploadFacture
   );
 
   router.delete(
@@ -112,7 +131,7 @@ export function createCommandeRoutes() {
     auditlogmidleware,
     requireRole(["Admin"]),
     validateParams(factureParamsSchema),
-    FactureController.remove
+    DocumentController.removeFacture
   );
 
   router.get(

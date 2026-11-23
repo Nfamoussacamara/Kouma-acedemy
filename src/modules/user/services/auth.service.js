@@ -61,7 +61,7 @@ export class AuthService {
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, config.jwtSecret);
-    } catch (error) {
+    } catch {
       throw new UnauthorizedError('Jeton de rafraîchissement invalide ou expiré');
     }
 

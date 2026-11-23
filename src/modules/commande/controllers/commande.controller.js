@@ -3,7 +3,7 @@ import { CommandeService } from '../services/commande.service.js';
 
 export class CommandeController {
   static listCommandes = asyncHandler(async (req, res) => {
-    const result = await CommandeService.listCommandes(req.query);
+    const result = await CommandeService.listCommandes(req.query, req.user);
     res.json({ success: true, ...result });
   });
 

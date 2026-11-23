@@ -4,25 +4,24 @@ export const NIVEAU_URGENCE = ["Faible", "Moyen", "Élevé", "Critique"];
 
 export const SYSTEMES = ["BE", "Admin", "Médecin", "Pharmacie"];
 
+// Statuts Pannes
 export const STATUTS_PANNE = [
-  "NOUVELLE",
-  "EN_COURS",
-  "RESOLUE",
-  "CLOTUREE",
-];
-
-export const VALID_QUERY_STATUTS = [
-  "nouvelle",
+  "en_attente",
   "en_cours",
   "resolue",
-  "cloturee",
+];
+
+// Valeurs acceptées en query string (identiques aux statuts, minuscules)
+export const VALID_QUERY_STATUTS = [
+  "en_attente",
+  "en_cours",
+  "resolue",
 ];
 
 export const STATUS_MAP = {
-  nouvelle: "NOUVELLE",
-  en_cours: "EN_COURS",
-  resolue: "RESOLUE",
-  cloturee: "CLOTUREE",
+  en_attente: "en_attente",
+  en_cours: "en_cours",
+  resolue: "resolue",
 };
 
 export const IMPACTS_PAR_TYPE = {

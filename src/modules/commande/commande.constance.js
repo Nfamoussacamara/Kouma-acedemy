@@ -4,11 +4,10 @@ export const STATUT_PAIEMENT = {
     PAYE: "PAYE",
 };
 
-
+// Statuts Commandes
 export const STATUT_COMMANDE = {
-    BROUILLON: "BROUILLON",
-    EMISE: "EMISE",
-    PARTIELLEMENT_RECUE: "PARTIELLEMENT_RECUE",
-    RECUE: "RECUE",
-    ANNULEE: "ANNULEE",
+    EN_ATTENTE: "en_attente",
+    COMMANDEE: "commandee",
+    RECU: "recu",
 };
+

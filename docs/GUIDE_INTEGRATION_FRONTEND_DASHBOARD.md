@@ -51,7 +51,7 @@ Le backend met à disposition des endpoints optimisés et décentralisés :
 ### 2.2 Statistiques par Section / Module (Idéal pour les pages Frontend)
 | Endpoint | Méthode | Rôles Autorisés | Description |
 | :--- | :--- | :--- | :--- |
-| `/api/v1/pannes/stats` | GET | `Admin`, `Utilisateur` | KPIs pannes : `total`, `nouvelles`, `enAttente`, `enCours`, `resolues`, `cloturees`, `urgentes`, `critiques` |
+| `/api/v1/pannes/stats` | GET | `Admin`, `Utilisateur` | KPIs pannes : `total`, `enAttente`, `enCours`, `resolues`, `besoinIntervention`, `urgentes`, `critiques` |
 | `/api/v1/commandes/stats` | GET | `Admin` | KPIs des commandes (totaux par statut, montant total engagé) |
 | `/api/v1/equipements/stats` | GET | `Admin`, `Utilisateur` | KPIs des équipements (actifs, inactifs, valeur totale, en panne) |
 | `/api/v1/fournisseurs/stats` | GET | `Admin` | KPIs des fournisseurs (total, actifs/inactifs, montant global) |
@@ -63,11 +63,10 @@ Le backend met à disposition des endpoints optimisés et décentralisés :
   "success": true,
   "data": {
     "total": 54,        // Total déclaré (personnel pour Utilisateur, global pour Admin)
-    "nouvelles": 10,    // Nouvelles — à traiter
-    "enAttente": 8,     // En attente d'intervention sur site (besoin_intervention)
-    "enCours": 5,       // En cours de réparation
+    "enAttente": 8,     // En attente de prise en charge
+    "enCours": 5,       // En cours de réparation / diagnostic
     "resolues": 30,     // Résolues
-    "cloturees": 5,     // Clôturées
+    "besoinIntervention": 12, // Nécessite une intervention
     "urgentes": 15,     // Priorité urgente (Critique ou Élevé)
     "critiques": 8      // Priorité strictement Critique
   }
@@ -104,19 +103,16 @@ Authorization: Bearer <access_token>
     "equipementsEnPanne": 2,
     "commandes": {
       "total": 9,
-      "brouillon": 2,
-      "emises": 0,
-      "partiellementRecues": 3,
+      "enAttente": 2,
+      "commandees": 3,
       "recues": 4,
-      "annulees": 0,
       "montantTotal": 188170
     },
     "pannes": {
       "total": 54,
-      "nouvelles": 54,
-      "enCours": 0,
-      "resolues": 0,
-      "cloturees": 0,
+      "enAttente": 8,
+      "enCours": 5,
+      "resolues": 41,
       "critiques": 41,
       "besoinIntervention": 52,
       "repartitionParStructure": [
@@ -142,7 +138,7 @@ Authorization: Bearer <access_token>
           "type_panne": "Espace/Système",
           "niveau_urgence": "Critique",
           "besoin_intervention": true,
-          "statut": "NOUVELLE",
+          "statut": "en_attente",
           "createdAt": "2026-09-07T10:08:07.014Z",
           "declarant": {
             "_id": "6a9e8ab131c4e0a273835469",
@@ -167,23 +163,20 @@ Authorization: Bearer <access_token>
 - `typeEquipementsCount` (number) : Nombre de catégories d'équipements.
 - `fournisseursCount` (number) : Nombre de fournisseurs et prestataires enregistrés.
 - `montantTotal` (number) : Valeur totale cumulée du parc d'équipements (champ `prix` des équipements).
-- `equipementsEnPanne` (number) : Nombre d'équipements distincts immobilisés dans une panne au statut `NOUVELLE` ou `EN_COURS`.
+- `equipementsEnPanne` (number) : Nombre d'équipements distincts immobilisés dans une panne au statut `en_attente` ou `en_cours`.
 
 #### Commandes (`commandes`)
 - `total` : Nombre total de commandes enregistrées.
-- `brouillon` : Commandes au statut `BROUILLON`.
-- `emises` : Commandes envoyées au fournisseur.
-- `partiellementRecues` : Commandes ayant eu au moins une livraison partielle.
-- `recues` : Commandes totalement réceptionnées.
-- `annulees` : Commandes annulées.
+- `enAttente` : Commandes au statut `en_attente` (en attente de validation/signature).
+- `commandees` : Commandes validées et passées auprès du fournisseur (`commandee`).
+- `recues` : Commandes totalement réceptionnées (`recu`).
 - `montantTotal` : Total financier cumulé de toutes les commandes (champ `prixtotal`).
 
 #### Pannes (`pannes`)
 - `total` : Nombre total de déclarations de panne actives.
-- `nouvelles` : Pannes au statut `NOUVELLE`.
-- `enCours` : Pannes en cours de traitement (`EN_COURS`).
-- `resolues` : Pannes résolues (`RESOLUE`).
-- `cloturees` : Pannes clôturées (`CLOTUREE`).
+- `enAttente` : Pannes au statut `en_attente` (en attente de diagnostic ou prise en charge).
+- `enCours` : Pannes en cours de traitement (`en_cours`).
+- `resolues` : Pannes résolues (`resolue`).
 - `critiques` : Pannes avec `niveau_urgence === "Critique"`.
 - `besoinIntervention` : Pannes nécessitant une intervention physique (`besoin_intervention === true`).
 - `repartitionParStructure` : Tableau d'objets `{ structure, total }` ordonné du plus grand au plus petit nombre de pannes par établissement de santé.
@@ -210,14 +203,12 @@ Authorization: Bearer <access_token>
   "success": true,
   "data": {
     "total": 48,
-    "nouvelles": 48,
-    "enAttente": 46,
-    "besoinIntervention": 46,
-    "enCours": 0,
-    "resolues": 0,
-    "cloturees": 0,
-    "urgentes": 36,
-    "critiques": 36
+    "enAttente": 12,
+    "enCours": 6,
+    "resolues": 30,
+    "besoinIntervention": 10,
+    "urgentes": 15,
+    "critiques": 8
   }
 }
 ```
@@ -228,11 +219,10 @@ Authorization: Bearer <access_token>
 
 Toutes ces valeurs concernent uniquement les déclarations faites par l'utilisateur connecté :
 - `total` : Nombre total de pannes qu'il a signalées.
-- `nouvelles` : Ses déclarations au statut `NOUVELLE` (à traiter).
-- `enAttente` / `besoinIntervention` : Ses pannes nécessitant une intervention (`besoin_intervention === true`).
-- `enCours` : Ses signalements en cours de prise en charge (`EN_COURS`).
-- `resolues` : Ses pannes réparées (`RESOLUE`).
-- `cloturees` : Ses pannes clôturées (`CLOTUREE`).
+- `enAttente` : Ses déclarations au statut `en_attente` (à traiter / en attente).
+- `enCours` : Ses signalements en cours de prise en charge (`en_cours`).
+- `resolues` : Ses pannes réparées (`resolue`).
+- `besoinIntervention` : Ses pannes nécessitant une intervention (`besoin_intervention === true`).
 - `urgentes` : Ses signalements à priorité urgente (`Critique` ou `Élevé`).
 - `critiques` : Ses signalements strictement classés `Critique`.
 
@@ -320,9 +310,10 @@ Lors du `POST /pannes`, les champs `reference`, `structure_sanitaire` et `declar
 
 1. **Préfixe d'URL :** Toujours préfixer par `/api/v1` (ex: `/api/v1/dashboard`).
 2. **Pas d'email dans le profil utilisateur :** Le schéma `User` contient `username`, `nom`, `prenom`, `tel`, `type`, `structure_sanitaire`. Il n'y a pas de champ `email`. Utiliser `declarant.username` ou `declarant.tel` pour contacter l'auteur.
-3. **Cas de casse des statuts :**
-   - En base et en retour d'API : `NOUVELLE`, `EN_COURS`, `RESOLUE`, `CLOTUREE` (majuscules).
-   - En paramètre de requête pour lister les pannes : minuscules acceptées (`?statut=nouvelle`).
+3. **Format des statuts :**
+   - Statuts officiels unifiés en minuscules snake_case :
+     - Pannes : `en_attente`, `en_cours`, `resolue`.
+     - Commandes : `en_attente`, `commandee`, `recu`.
 4. **Gestion des rôles :**
    - Les deux rôles officiels sont `"Admin"` et `"Utilisateur"`.
    - `GET /api/v1/dashboard` et `GET /api/v1/dashboard/charts/monthly` sont strictement réservés au rôle `"Admin"`.

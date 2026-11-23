@@ -102,32 +102,28 @@ export class PanneRepository {
     const finalFilter = { ...filter, deletedAt: null };
     const [
       total,
-      nouvelles,
       enAttente,
       enCours,
       resolues,
-      cloturees,
       urgentes,
       critiques,
+      besoinIntervention,
     ] = await Promise.all([
       PanneModel.countDocuments(finalFilter),
-      PanneModel.countDocuments({ ...finalFilter, statut: "NOUVELLE" }),
-      PanneModel.countDocuments({ ...finalFilter, besoin_intervention: true }),
-      PanneModel.countDocuments({ ...finalFilter, statut: "EN_COURS" }),
-      PanneModel.countDocuments({ ...finalFilter, statut: "RESOLUE" }),
-      PanneModel.countDocuments({ ...finalFilter, statut: "CLOTUREE" }),
+      PanneModel.countDocuments({ ...finalFilter, statut: "en_attente" }),
+      PanneModel.countDocuments({ ...finalFilter, statut: "en_cours" }),
+      PanneModel.countDocuments({ ...finalFilter, statut: "resolue" }),
       PanneModel.countDocuments({ ...finalFilter, niveau_urgence: { $in: ["Critique", "Élevé", "Elevé"] } }),
       PanneModel.countDocuments({ ...finalFilter, niveau_urgence: "Critique" }),
+      PanneModel.countDocuments({ ...finalFilter, besoin_intervention: true }),
     ]);
 
     return {
       total,
-      nouvelles,
       enAttente,
-      besoinIntervention: enAttente,
       enCours,
       resolues,
-      cloturees,
+      besoinIntervention,
       urgentes,
       critiques,
     };

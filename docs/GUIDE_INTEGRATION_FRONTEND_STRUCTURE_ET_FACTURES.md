@@ -166,7 +166,7 @@ Le backend injecte automatiquement le déclarant connecté et sa structure sanit
     "_id": "66d801111111111111111111",
     "reference": "PA-HRL-0001-0409",
     "structure_sanitaire": "HOPITAL REGIONAL DE LABE",
-    "statut": "NOUVELLE",
+    "statut": "en_attente",
     "description": "L'échographe de la salle 2 ne démarre plus",
     "declarant": {
       "_id": "66d010000000000000000001",
@@ -208,7 +208,7 @@ Le backend injecte automatiquement le déclarant connecté et sa structure sanit
 * **Formats autorisés :**
   - PDF (`application/pdf`)
   - Images (`image/jpeg`, `image/png`, `image/webp`)
-* **Taille maximale :** `5 Mo`
+* **Taille maximale :** `10 Mo`
 
 ---
 
@@ -233,8 +233,8 @@ interface Facture {
 ```json
 {
   "_id": "66c055555555555555555555",
-  "numero": "CMD-202608-0001",
-  "status": "RECUE",
+  "reference": "CMD-202608-0001",
+  "status": "recu",
   "receptions": [
     {
       "_id": "66d900000000000000000001",

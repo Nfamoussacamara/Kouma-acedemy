@@ -3,11 +3,7 @@ import { STATUT_COMMANDE } from "../commande.constance.js";
 
 const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 
-const VALID_STATUSES = [
-  ...Object.values(STATUT_COMMANDE),
-  ...Object.values(STATUT_COMMANDE).map((s) => s.toLowerCase()),
-  "annulée",
-];
+const VALID_STATUSES = Object.values(STATUT_COMMANDE); // ["en_attente", "commandee", "recu"]
 
 const equipementInputSchema = yup.object({
   equipement: yup
@@ -36,13 +32,15 @@ export const createCommandeSchema = yup.object({
     .string()
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de panne invalide")
+    .nullable()
     .optional(),
 
   fournisseur: yup
     .string()
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de fournisseur invalide")
-    .required("Le champ fournisseur est requis"),
+    .nullable()
+    .optional(),
   equipements: yup
     .array()
     .of(equipementInputSchema)
@@ -64,9 +62,35 @@ export const updateCommandeSchema = yup.object({
     .trim()
     .matches(objectIdRegex, "Format d'identifiant de fournisseur invalide")
     .optional(),
+  status: yup.string().oneOf(VALID_STATUSES).optional(),
   equipements: yup
     .array()
-    .of(equipementInputSchema)
+    .of(
+      yup.object({
+        equipement: yup
+          .string()
+          .trim()
+          .matches(objectIdRegex, "Format d'identifiant d'équipement invalide")
+          .required("L'équipement est obligatoire"),
+        quantiteCommandee: yup
+          .number()
+          .typeError("La quantité commandée doit être un nombre")
+          .integer("La quantité commandée doit être un entier")
+          .min(1, "La quantité commandée doit être supérieure à 0")
+          .optional(),
+        quantiteValidee: yup
+          .number()
+          .typeError("La quantité validée doit être un nombre")
+          .integer("La quantité validée doit être un entier")
+          .min(1, "La quantité validée doit être supérieure à 0")
+          .optional(),
+        prixUnitaire: yup
+          .number()
+          .typeError("Le prix unitaire doit être un nombre")
+          .min(0, "Le prix unitaire doit être supérieur ou égal à 0")
+          .optional(),
+      })
+    )
     .min(1, "Une commande doit contenir au moins un équipement")
     .optional(),
 });
@@ -107,8 +131,7 @@ export const receptionCommandeSchema = yup.object({
           .number()
           .typeError("Le prix unitaire doit être un nombre")
           .min(0, "Le prix unitaire doit être supérieur ou égal à 0")
-          .optional()
-          .nullable(),
+          .required("Le prix unitaire est requis à la réception"),
       })
     )
     .min(1, "Veuillez fournir au moins un équipement réceptionné")

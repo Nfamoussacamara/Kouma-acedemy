@@ -10,8 +10,8 @@ try {
   await seedAdmin(); // Création automatique de l'admin si nécessaire
   
   app.listen(config.port, () => {
+    console.log(`[${config.env}] Server listening on http://localhost:${config.port}${config.apiPrefix}`);
     if (!config.isProduction) {
-      console.log(`[development] Server listening on http://localhost:${config.port}${config.apiPrefix}`);
       console.log(`Swagger UI: http://localhost:${config.port}/docs`);
     }
   });

@@ -22,6 +22,12 @@ export const commandeSchema = new mongoose.Schema(
       ref: "User",
     },
 
+    // Auteur de la création (peut différer du demandeur si un Admin crée pour un User)
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
     equipements: [
       {
         equipement: {
@@ -29,9 +35,15 @@ export const commandeSchema = new mongoose.Schema(
           ref: "Equipement",
         },
 
+        // Quantité demandée initialement — immuable après création
+        quantiteDemandee: {
+          type: Number,
+          default: 1,
+        },
+
+        // Quantité validée/ajustée par l'Admin lors du passage à "commandee"
         quantiteCommandee: {
           type: Number,
-          required: true,
           default: 1,
         },
 
@@ -68,7 +80,6 @@ export const commandeSchema = new mongoose.Schema(
             },
             quantiteRecue: {
               type: Number,
-              required: true,
             },
             prixUnitaire: {
               type: Number,
@@ -119,10 +130,34 @@ export const commandeSchema = new mongoose.Schema(
       },
     ],
 
+    // Bon de commande signé
+    bonSigne: {
+      url: { type: String, default: null },
+      publicId: { type: String, default: null },
+      nomOriginal: { type: String, default: null },
+      taille: { type: Number, default: null },
+      mimeType: { type: String, default: null },
+      uploadedAt: { type: Date, default: null },
+      uploadedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+    },
+
     status: {
       type: String,
       enum: Object.values(STATUT_COMMANDE),
-      default: STATUT_COMMANDE.BROUILLON,
+      default: STATUT_COMMANDE.EN_ATTENTE,
     },
 
     statusPaiement: {
@@ -138,7 +173,6 @@ export const commandeSchema = new mongoose.Schema(
         },
         montant: {
           type: Number,
-          required: true,
         },
         date: {
           type: Date,
