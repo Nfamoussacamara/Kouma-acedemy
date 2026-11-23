@@ -1,4 +1,3 @@
-import DashboardController from './controllers/dashboard.controller.js';
 import { createDashboardRoutes } from './routes/dashboard.routes.js';
 import DashboardRepository from './repositories/dashboard.repository.js';
 

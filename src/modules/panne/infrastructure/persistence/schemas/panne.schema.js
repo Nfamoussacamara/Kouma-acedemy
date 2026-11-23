@@ -8,7 +8,6 @@ import {
   STATUTS_PANNE,
   STRUCTURE_SANITAIRE,
 } from "../../../panne.constants.js";
-
 export const panneSchema = new mongoose.Schema(
   {
     reference:{
@@ -88,7 +87,7 @@ export const panneSchema = new mongoose.Schema(
     statut: {
       type: String,
       enum: STATUTS_PANNE,
-      default: "NOUVELLE",
+      default: "en_attente",
     },
 
     isActive: {

@@ -127,7 +127,7 @@ export class EquipementRepository {
         {
           $match: {
             deletedAt: null,
-            statut: { $in: ["NOUVELLE", "EN_COURS"] },
+            statut: { $in: ["en_attente", "en_cours"] },
             "equipements.0": { $exists: true },
           },
         },

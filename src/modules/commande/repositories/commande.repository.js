@@ -105,23 +105,35 @@ export class CommandeRepository {
     return document ? document : null;
   };
 
+  static updateBonSigne = async (commandeId, bonSigneData) => {
+    const document = await CommandeModel.findOneAndUpdate(
+      { _id: commandeId, deletedAt: null },
+      { $set: { bonSigne: bonSigneData } },
+      { new: true, runValidators: true }
+    )
+      .populate('fournisseur')
+      .populate('demandeur', 'nom prenom username tel type')
+      .populate('panne')
+      .populate('equipements.equipement')
+      .populate('receptions.receptionnePar', 'nom prenom username tel type')
+      .populate('receptions.equipementsRecus.equipement');
+
+    return document ? document : null;
+  };
+
   static getStats = async () => {
     const [
       total,
-      brouillon,
-      emises,
-      partiellementRecues,
+      enAttente,
+      commandees,
       recues,
-      annulees,
       montantTotalAggregation,
       dernieresCommandes,
     ] = await Promise.all([
       CommandeModel.countDocuments({ deletedAt: null }),
-      CommandeModel.countDocuments({ status: STATUT_COMMANDE.BROUILLON, deletedAt: null }),
-      CommandeModel.countDocuments({ status: STATUT_COMMANDE.EMISE, deletedAt: null }),
-      CommandeModel.countDocuments({ status: STATUT_COMMANDE.PARTIELLEMENT_RECUE, deletedAt: null }),
-      CommandeModel.countDocuments({ status: STATUT_COMMANDE.RECUE, deletedAt: null }),
-      CommandeModel.countDocuments({ status: STATUT_COMMANDE.ANNULEE, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.EN_ATTENTE, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.COMMANDEE, deletedAt: null }),
+      CommandeModel.countDocuments({ status: STATUT_COMMANDE.RECU, deletedAt: null }),
       CommandeModel.aggregate([
         { $match: { deletedAt: null } },
         { $group: { _id: null, total: { $sum: "$prixtotal" } } },
@@ -137,11 +149,9 @@ export class CommandeRepository {
     return {
       total,
       parStatut: {
-        brouillon,
-        emises,
-        partiellementRecues,
+        enAttente,
+        commandees,
         recues,
-        annulees,
       },
       montantTotal: montantTotalAggregation[0]?.total ?? 0,
       dernieresCommandes,

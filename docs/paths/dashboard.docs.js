@@ -27,11 +27,9 @@ export const dashboardPaths = {
                         type: 'object',
                         properties: {
                           total: { type: 'integer', example: 25 },
-                          brouillon: { type: 'integer', example: 4 },
-                          emises: { type: 'integer', example: 6 },
-                          partiellementRecues: { type: 'integer', example: 3 },
+                          enAttente: { type: 'integer', example: 4 },
+                          commandees: { type: 'integer', example: 6 },
                           recues: { type: 'integer', example: 10 },
-                          annulees: { type: 'integer', example: 2 },
                           montantTotal: { type: 'number', example: 8500000 },
                         },
                       },
@@ -39,10 +37,9 @@ export const dashboardPaths = {
                         type: 'object',
                         properties: {
                           total: { type: 'integer', example: 30 },
-                          nouvelles: { type: 'integer', example: 8 },
+                          enAttente: { type: 'integer', example: 8 },
                           enCours: { type: 'integer', example: 10 },
-                          resolues: { type: 'integer', example: 7 },
-                          cloturees: { type: 'integer', example: 5 },
+                          resolues: { type: 'integer', example: 12 },
                           critiques: { type: 'integer', example: 4 },
                           besoinIntervention: { type: 'integer', example: 9 },
                           repartitionParStructure: {
@@ -66,7 +63,7 @@ export const dashboardPaths = {
                                 description: { type: 'string', example: 'Écran noir au démarrage' },
                                 type_panne: { type: 'string', example: 'Equipement' },
                                 niveau_urgence: { type: 'string', example: 'Critique' },
-                                statut: { type: 'string', example: 'NOUVELLE' },
+                                statut: { type: 'string', example: 'en_attente' },
                                 besoin_intervention: { type: 'boolean', example: true },
                                 createdAt: { type: 'string', format: 'date-time' },
                                 declarant: {

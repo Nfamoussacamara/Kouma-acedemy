@@ -27,6 +27,8 @@
    - [`PATCH /api/v1/commandes/:id/status`](#45-patch-apiv1commandesidstatus--émettre-ou-annuler-une-commande)
    - [`POST /api/v1/commandes/:id/receptions`](#46-post-apiv1commandesidreceptions--enregistrer-une-livraison--réception)
    - [`DELETE /api/v1/commandes/:id`](#47-delete-apiv1commandesid--supprimer-une-commande-soft-delete)
+   - [`POST /api/v1/commandes/:id/bon-signe`](#48-post-apiv1commandesidbon-signe--téléverser-le-bon-de-commande-signé)
+   - [`DELETE /api/v1/commandes/:id/bon-signe`](#49-delete-apiv1commandesidbon-signe--supprimer-le-bon-de-commande-signé)
 5. [Matrice des Codes d'Erreur & Réponses Standard](#5-matrice-des-codes-derreur--réponses-standard)
 
 ---
@@ -35,15 +37,15 @@
 
 ```mermaid
 flowchart LR
-    P["<b>PANNE</b><br>ID: _id<br>Numéro: PAN-YYYYMM-XXXX<br>Statut: NOUVELLE | EN_COURS..."] 
-    C["<b>COMMANDE</b><br>ID: _id<br>Numéro: CMD-YYYYMM-XXXX<br>Clé étrangère: <code>panne: ObjectId</code><br>Statut: BROUILLON | EMISE..."]
+    P["<b>PANNE</b><br>ID: _id<br>Numéro: PA-...<br>Statut: en_attente | en_cours | resolue"] 
+    C["<b>COMMANDE</b><br>ID: _id<br>Numéro: CMD-...<br>Clé étrangère: <code>panne: ObjectId (optionnel)</code><br>Statut: en_attente | commandee | recu"]
 
-    P -- "1 Panne a N Commandes" --> C
-    C -. "Chaque Commande pointe vers 1 Panne" .-> P
+    P -. "1 Panne peut avoir N Commandes" .-> C
+    C -. "Commande liée à 0 ou 1 Panne" .-> P
 ```
 
 ### Principes Directeurs
-* **Clé étrangère unique :** Le schéma `Commande` contient le champ `panne` (`ObjectId`, obligatoire).
+* **Liaison optionnelle :** Le schéma `Commande` contient le champ `panne` (`ObjectId`, optionnel/nullable). Une commande peut être créée directement sans panne (réapprovisionnement).
 * **Peuplement automatique :** Lors de l'appel à `GET /api/v1/pannes/:id`, le backend exécute automatiquement une agrégation pour injecter le tableau `commandes[]` avec les informations essentielles de chaque commande liée.
 
 ---
@@ -77,25 +79,22 @@ Le backend autorise deux formats d'articles dans une commande :
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> BROUILLON : POST /commandes
-    BROUILLON --> EMISE : PATCH /status ("emise")
-    BROUILLON --> ANNULEE : PATCH /status ("annulee")
-    EMISE --> ANNULEE : PATCH /status ("annulee", si 0 réception)
-    EMISE --> PARTIELLEMENT_RECUE : POST /receptions (quantité partielle)
-    EMISE --> RECUE : POST /receptions (quantité totale)
-    PARTIELLEMENT_RECUE --> RECUE : POST /receptions (solde total)
-    RECUE --> [*]
-    ANNULEE --> [*]
+    [*] --> en_attente : POST /commandes
+    en_attente --> commandee : PATCH /commandes/:id (Assignation fournisseur par Admin)
+    commandee --> commandee : POST /receptions (Réception partielle)
+    commandee --> recu : POST /receptions (Totalité reçue)
+    recu --> [*]
 ```
 
 ---
 
 ### 2.4 Automatismes lors de la Réception (`POST /receptions`)
 Dès qu'une réception physique est enregistrée :
-1. **Mise à jour des quantités reçues :** `quantiteRecue` est incrémenté sur chaque ligne d'article.
-2. **Transition de statut automatique :** Si tous les articles ont atteint leur quantité commandée, le statut passe automatiquement à `RECUE` ; sinon, il passe à `PARTIELLEMENT_RECUE`.
-3. **Auto-création d'Équipement :** Pour tout article hors-catalogue, une nouvelle fiche équipement est créée automatiquement dans le catalogue avec la désignation et le prix unitaire d'achat constaté.
-4. **Historisation du prix :** Le prix de l'équipement catalogue est mis à jour et consigné dans `historique_prix`.
+1. **Mise à jour des quantités reçues :** `quantiteRecue` est incrémenté sur chaque ligne d'équipement.
+2. **Transition de statut automatique :** Si tous les équipements ont atteint leur quantité commandée (`quantiteRecue === quantiteCommandee`), le statut passe automatiquement à `recu` ; sinon, il reste à `commandee`.
+3. **Calcul automatique du `prixtotal` :** Calculé en temps réel selon la formule officielle :
+   $$\text{prixtotal} = \sum (\text{quantiteRecue} \times \text{prixUnitaire})$$
+4. **Historisation du prix :** Le prix unitaire d'achat constaté met à jour l'historique d'achat de l'équipement.
 5. **Verrouillage d'immuabilité :** Dès la première réception, les prix unitaires reçus sont figés. L'annulation ou la suppression de la commande devient **strictement interdite** (`409 Conflict`).
 
 ---
@@ -116,10 +115,9 @@ Permet de récupérer les listes d'énumérations pour alimenter dynamiquement l
     "types_panne": ["Equipement", "Espace/Système"],
     "niveaux_urgence": ["Faible", "Moyen", "Élevé", "Critique"],
     "statuts": [
-      "nouvelle",
+      "en_attente",
       "en_cours",
-      "resolue",
-      "cloturee"
+      "resolue"
     ],
     "impacts_par_type": {
       "Equipement": [
@@ -167,7 +165,7 @@ Retourne la liste paginée des tickets de panne selon les critères de recherche
   - `page` *(integer, défaut: 1)* — Numéro de page.
   - `limit` *(integer, défaut: 20)* — Nombre d'éléments par page.
   - `search` *(string)* — Recherche textuelle sur le numéro, la description ou la désignation.
-  - `statut` *(string)* — Filtre par statut (`NOUVELLE`, `EN_COURS`, etc.).
+  - `statut` *(string)* — Filtre par statut (`en_attente`, `en_cours`, `resolue`).
   - `niveau_urgence` *(string)* — Filtre par urgence (`Faible`, `Moyen`, `Élevé`, `Critique`).
   - `type_panne` *(string)* — `Equipement` ou `Espace/Système`.
   - `date_debut` / `date_fin` *(string ISO)* — Intervalle de dates.
@@ -181,7 +179,7 @@ Retourne la liste paginée des tickets de panne selon les critères de recherche
       "_id": "66c011111111111111111111",
       "description": "L'écran principal scintille et s'éteint",
       "type_panne": "Equipement",
-      "statut": "NOUVELLE",
+      "statut": "en_attente",
       "niveau_urgence": "Moyen",
       "declarant": {
         "_id": "66a010000000000000000001",
@@ -216,7 +214,7 @@ Retourne la fiche complète d'une panne avec l'ensemble des commandes d'approvis
     "_id": "66c011111111111111111111",
     "description": "L'écran principal de l'accueil clignote et s'éteint",
     "type_panne": "Equipement",
-    "statut": "EN_COURS",
+    "statut": "en_cours",
     "niveau_urgence": "Moyen",
     "equipements": [
       {
@@ -247,8 +245,8 @@ Retourne la fiche complète d'une panne avec l'ensemble des commandes d'approvis
     "commandes": [
       {
         "_id": "66c055555555555555555555",
-        "numero": "CMD-202608-0001",
-        "status": "EMISE",
+        "reference": "CMD-202608-0001",
+        "status": "commandee",
         "prixtotal": 85000,
         "createdAt": "2026-08-16T16:15:00.000Z"
       }
@@ -369,7 +367,7 @@ Vous pouvez déclarer simultanément plusieurs équipements dans une même panne
         "traitement": "REPARATION"
       }
     ],
-    "statut": "NOUVELLE"
+    "statut": "en_attente"
   }
 }
 ```
@@ -387,15 +385,14 @@ Met à jour les informations descriptives d'une panne.
 ---
 
 ### 3.6 `PATCH /api/v1/pannes/:id/statut` — Changer le Statut d'une Panne
-Permet de faire évoluer le statut d'un ticket d'incident en consignant un commentaire d'audit.
+Permet de faire évoluer le statut d'un ticket d'incident (`en_attente`, `en_cours`, `resolue`).
 
 * **Authentification :** Requise (Rôle `Admin`)
 * **Méthode :** `PATCH`
 * **Corps de la requête :**
 ```json
 {
-  "statut": "EN_DIAGNOSTIC",
-  "commentaire": "Prise en charge par l'équipe maintenance"
+  "statut": "en_cours"
 }
 ```
 * **Réponse HTTP :** `200 OK`
@@ -420,14 +417,16 @@ Marque la panne comme supprimée sans perte d'historique (`isDeleted: true`).
 ## 4. Module Commande — Référentiel Exhaustif des Endpoints
 
 ### 4.1 `GET /api/v1/commandes` — Lister les Commandes avec Filtres & Pagination
-* **Authentification :** Requise (`Bearer Token`)
+* **Authentification :** Requise (`Bearer Token` — Rôles `Admin`, `Utilisateur`)
 * **Méthode :** `GET`
+* **Règles de visibilité :** L'utilisateur standard ne voit que ses propres commandes (`demandeur = user.id`). L'administrateur a une vue globale et peut filtrer par `?demandeur=<id>`.
 * **Query Parameters :**
   - `page` *(integer, défaut: 1)*
   - `limit` *(integer, défaut: 20)*
-  - `search` *(string)* — Recherche sur le numéro `CMD-...`, le fournisseur ou les articles.
-  - `status` *(string)* — `brouillon`, `emise`, `partiellement_recue`, `recue`, `annulee`.
+  - `search` *(string)* — Recherche sur la référence `CMD-...`, le fournisseur ou la désignation.
+  - `status` *(string)* — `en_attente`, `commandee`, `recu`.
   - `fournisseur` *(string)* — ID MongoDB du fournisseur.
+  - `demandeur` *(string)* — ID MongoDB du demandeur (Admin uniquement).
 
 * **Réponse HTTP :** `200 OK`
 ```json
@@ -436,17 +435,17 @@ Marque la panne comme supprimée sans perte d'historique (`isDeleted: true`).
   "data": [
     {
       "_id": "66c055555555555555555555",
-      "numero": "CMD-202608-0001",
+      "reference": "CMD-202608-0001",
       "panne": {
         "_id": "66c011111111111111111111",
-        "numero": "PAN-202608-0001"
+        "reference": "PA-202608-0001"
       },
       "fournisseur": {
         "_id": "66c022222222222222222222",
         "nom": "Fournisseur Informatique SA"
       },
-      "status": "BROUILLON",
-      "prixtotal": 85000,
+      "status": "en_attente",
+      "prixtotal": 0,
       "createdAt": "2026-08-16T16:15:00.000Z"
     }
   ],
@@ -465,10 +464,10 @@ Marque la panne comme supprimée sans perte d'historique (`isDeleted: true`).
   "success": true,
   "data": {
     "_id": "66c055555555555555555555",
-    "numero": "CMD-202608-0001",
+    "reference": "CMD-202608-0001",
     "panne": {
       "_id": "66c011111111111111111111",
-      "numero": "PAN-202608-0001"
+      "reference": "PA-202608-0001"
     },
     "fournisseur": {
       "_id": "66c022222222222222222222",
@@ -479,25 +478,34 @@ Marque la panne comme supprimée sans perte d'historique (`isDeleted: true`).
       "nom": "Admin",
       "prenom": "Principal"
     },
-    "status": "PARTIELLEMENT_RECUE",
+    "status": "commandee",
     "prixtotal": 85000,
-    "articles": [
+    "equipements": [
       {
         "equipement": {
           "_id": "66c033333333333333333333",
           "designation": "Écran Dell 24 pouces"
         },
+        "quantiteDemandee": 2,
         "quantiteCommandee": 2,
         "quantiteRecue": 1,
         "prixUnitaire": 85000
       }
     ],
+    "bonSigne": {
+      "url": "https://res.cloudinary.com/.../bon_signe.pdf",
+      "nomOriginal": "bon_signe.pdf",
+      "taille": 124500,
+      "mimeType": "application/pdf",
+      "uploadedAt": "2026-08-16T16:30:00.000Z",
+      "deletedAt": null
+    },
     "receptions": [
       {
         "_id": "66c099999999999999999999",
-        "dateReception": "2026-08-16T17:00:00.000Z",
+        "date": "2026-08-16T17:00:00.000Z",
         "receptionnePar": { "nom": "Magasinier", "prenom": "Alain" },
-        "articlesRecus": [
+        "equipementsRecus": [
           {
             "equipement": "66c033333333333333333333",
             "quantiteRecue": 1,
@@ -513,33 +521,25 @@ Marque la panne comme supprimée sans perte d'historique (`isDeleted: true`).
 ---
 
 ### 4.3 `POST /api/v1/commandes` — Créer une Nouvelle Commande
-* **Authentification :** Requise (Rôle `Admin`)
+* **Authentification :** Requise (Rôles `Admin`, `Utilisateur`)
 * **Méthode :** `POST`
 * **Corps de la requête :**
 ```json
 {
   "panne": "66c011111111111111111111",
   "fournisseur": "66c022222222222222222222",
-  "utiliserPrixCatalogue": true,
-  "articles": [
+  "equipements": [
     {
       "equipement": "66c033333333333333333333",
-      "quantiteCommandee": 1
-    },
-    {
-      "typeEquipement": "66c044444444444444444444",
-      "designation": "Câble DisplayPort 2m Blindé",
-      "quantiteCommandee": 2,
-      "prixUnitaire": 0
+      "quantiteCommandee": 2
     }
   ]
 }
 ```
 * **Champs clés :**
-  - `panne` *(string, obligatoire)* : ID de la panne.
-  - `fournisseur` *(string, obligatoire)* : ID du fournisseur.
-  - `utiliserPrixCatalogue` *(boolean, optionnel, défaut `false`)* : si `true`, pré-remplit les prix catalogue > 0.
-  - `articles` *(array, min 1)* : liste des lignes d'articles.
+  - `panne` *(string, optionnel)* : ID de la panne liée (null si commande libre).
+  - `fournisseur` *(string, optionnel)* : ID du fournisseur (l'Admin l'assigne lors de la validation).
+  - `equipements` *(array, min 1)* : liste des équipements demandés (`quantiteCommandee >= 1`).
 * **Réponse HTTP :** `201 Created`
 ```json
 {
@@ -547,80 +547,101 @@ Marque la panne comme supprimée sans perte d'historique (`isDeleted: true`).
   "message": "Commande créée avec succès",
   "data": {
     "_id": "66c055555555555555555555",
-    "numero": "CMD-202608-0001",
-    "status": "BROUILLON",
-    "prixtotal": 85000
+    "reference": "CMD-202608-0001",
+    "status": "en_attente",
+    "prixtotal": 0
   }
 }
 ```
 
 ---
 
-### 4.4 `PATCH /api/v1/commandes/:id` — Mettre à jour les Articles / Devis
-Permet de renseigner les prix négociés du devis ou d'ajuster les quantités avant livraison.
+### 4.4 `PATCH /api/v1/commandes/:id` — Validation Admin & Modification
+Permet à l'Admin d'assigner le fournisseur (ce qui fait passer la commande de `en_attente` à `commandee`) ou d'ajuster les quantités validées (`quantiteValidee`).
 
 * **Authentification :** Requise (Rôle `Admin`)
 * **Méthode :** `PATCH`
 * **Corps de la requête :**
 ```json
 {
-  "articles": [
+  "fournisseur": "66c022222222222222222222",
+  "equipements": [
     {
       "equipement": "66c033333333333333333333",
-      "quantiteCommandee": 1,
+      "quantiteValidee": 2,
       "prixUnitaire": 82000
     }
   ]
 }
 ```
-* **Contrainte d'immuabilité :** Retourne `409 Conflict` si la commande est déjà `RECUE` ou `ANNULEE`, ou si le prix d'un article déjà réceptionné est modifié.
+* **Contrainte d'immuabilité :** Retourne `409 Conflict` si la commande est déjà `recu` ou si le prix d'un équipement déjà réceptionné est modifié.
 
 ---
 
-### 4.5 `PATCH /api/v1/commandes/:id/status` — Émettre ou Annuler une Commande
+### 4.5 `PATCH /api/v1/commandes/:id/status` — Changer Manuellement le Statut
 * **Authentification :** Requise (Rôle `Admin`)
 * **Méthode :** `PATCH`
 * **Corps de la requête :**
 ```json
 {
-  "status": "emise"
+  "status": "commandee"
 }
 ```
-*(ou `{ "status": "annulee" }`)*
+*(valeurs autorisées : `"en_attente"`, `"commandee"`, `"recu"`)*
 * **Contrainte d'intégrité :** L'annulation est rejetée (`409 Conflict`) dès lors qu'au moins une unité a été reçue (`quantiteRecue > 0`).
 
 ---
 
 ### 4.6 `POST /api/v1/commandes/:id/receptions` — Enregistrer une Livraison / Réception
-Enregistre la réception physique des articles avec leurs prix d'achat réels figurant sur la facture fournisseur.
+Enregistre la réception physique des articles avec leurs prix d'achat réels figurant sur la facture fournisseur. Accessible uniquement sur les commandes au statut `commandee`.
 
 * **Authentification :** Requise (Rôle `Admin`)
 * **Méthode :** `POST`
 * **Corps de la requête :**
 ```json
 {
-  "articlesRecus": [
+  "equipementsRecus": [
     {
       "equipement": "66c033333333333333333333",
       "quantiteRecue": 1,
       "prixUnitaire": 82000
-    },
-    {
-      "typeEquipement": "66c044444444444444444444",
-      "quantiteRecue": 2,
-      "prixUnitaire": 6500
     }
   ]
 }
 ```
-* **Réponse HTTP :** `200 OK` (retourne la commande recalculée, avec statut `PARTIELLEMENT_RECUE` ou `RECUE`).
+* **Comportement automatique :**
+  - Calcul automatique : $\text{prixtotal} = \sum (\text{quantiteRecue} \times \text{prixUnitaire})$.
+  - Si solde totalement reçu $\rightarrow$ statut passe automatiquement à `recu`.
+  - Si réception partielle $\rightarrow$ statut reste à `commandee`.
+* **Réponse HTTP :** `200 OK`
 
 ---
 
 ### 4.7 `DELETE /api/v1/commandes/:id` — Supprimer une Commande (Soft Delete)
 * **Authentification :** Requise (Rôle `Admin`)
 * **Méthode :** `DELETE`
-* **Contrainte d'intégrité :** Rejeté (`409 Conflict`) si des réceptions existent.
+* **Contrainte d'intégrité :** Rejeté (`409 Conflict`) si des réceptions existent déjà.
+* **Réponse HTTP :** `200 OK`
+
+---
+
+### 4.8 `POST /api/v1/commandes/:id/bon-signe` — Téléverser le Bon de Commande Signé
+Permet d'envoyer le bon de commande scanné/signé (PDF ou image, max 10 Mo) vers Cloudinary.
+
+* **Authentification :** Requise (Rôles `Admin` ou `Utilisateur` demandeur de la commande)
+* **Méthode :** `POST`
+* **Headers :** `Content-Type: multipart/form-data`
+* **FormData :** Champ `file` (binaire)
+* **Formats autorisés :** PDF, PNG, JPG, JPEG, WEBP (taille max: 10 Mo).
+* **Réponse HTTP :** `200 OK`
+
+---
+
+### 4.9 `DELETE /api/v1/commandes/:id/bon-signe` — Supprimer le Bon de Commande Signé
+Supprime logiquement (`soft delete`) le bon signé associé à la commande (`deletedAt`, `deletedBy`).
+
+* **Authentification :** Requise (Rôles `Admin` ou `Utilisateur` demandeur de la commande)
+* **Méthode :** `DELETE`
 * **Réponse HTTP :** `200 OK`
 
 ---
@@ -640,6 +661,6 @@ Toutes les erreurs de l'API suivent la structure normalisée suivante :
 | :--- | :--- | :--- |
 | **`400`** | `Bad Request` | Paramètre obligatoire manquant, syntaxe d'ID invalide, sur-réception (`quantiteRecue > quantiteRestante`). |
 | **`401`** | `Unauthorized` | Token JWT absent, expiré ou invalide. |
-| **`403`** | `Forbidden` | Privilèges insuffisants (rôle `Admin` requis sur les mutations). |
+| **`403`** | `Forbidden` | Privilèges insuffisants (accès refusé sur les ressources d'un autre utilisateur). |
 | **`404`** | `Not Found` | Ressource introuvable (`Panne`, `Commande`, `Fournisseur`, `Équipement`). |
-| **`409`** | `Conflict` | Violation d'immuabilité : commande déjà `RECUE`, modification d'un prix figé, ou annulation/suppression avec réception existante. |
+| **`409`** | `Conflict` | Violation d'immuabilité : commande déjà `recu`, modification d'un prix figé, ou annulation/suppression avec réception existante. |

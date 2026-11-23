@@ -9,7 +9,6 @@ import {
   ALL_TENTATIVES,
   STRUCTURE_SANITAIRE
 } from "../panne.constants.js";
-
 const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 
 const createEquipementLigneSchema = yup
@@ -305,7 +304,7 @@ export const toggleStatutSchema = yup.object({
     .string()
     .oneOf(
       VALID_QUERY_STATUTS,
-      "statut invalide"
+      `Statut invalide. Valeurs acceptées : ${VALID_QUERY_STATUTS.join(", ")}`
     )
     .required("Le champ statut est requis"),
 });

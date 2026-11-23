@@ -7,15 +7,8 @@ import { getPagination } from "../../../shared/utils/pagination.util.js";
 import { PanneRepository } from "../repositories/panne.repository.js";
 import { CommandeModel } from "../../commande/infrastructure/persistence/models/Commande.model.js";
 import {
-  URGENCE_ORDER,
   STATUTS_PANNE,
-  VALID_QUERY_STATUTS,
   STATUS_MAP,
-  TYPE_PANNE,
-  NIVEAU_URGENCE,
-  SYSTEMES,
-  IMPACTS_PAR_TYPE,
-  TENTATIVES_PAR_TYPE,
 } from "../panne.constants.js";
 import { nextPanneReference } from "../services/counter.service.js";
 import { EquipementRepository } from "../../equipement/repositories/equipement.repository.js";
@@ -166,9 +159,9 @@ export class PanneService {
     }
 
     const rawStatus = statut.toLowerCase().trim();
-    const targetStatus = STATUS_MAP[rawStatus] || statut.toUpperCase();
+    const targetStatus = STATUS_MAP[rawStatus];
 
-    if (!STATUTS_PANNE.includes(targetStatus)) {
+    if (!targetStatus || !STATUTS_PANNE.includes(targetStatus)) {
       throw new ValidationError(`Statut invalide : ${statut}`);
     }
 

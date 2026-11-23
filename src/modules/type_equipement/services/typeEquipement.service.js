@@ -1,6 +1,7 @@
 import {
   NotFoundError,
   ValidationError,
+  ConflictError,
 } from "../../../shared/errors/AppError.js";
 import { isValidObjectId } from "../../../infrastructure/database/mongoose.js";
 import { getPagination } from "../../../shared/utils/pagination.util.js";

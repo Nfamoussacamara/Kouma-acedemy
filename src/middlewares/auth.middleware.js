@@ -59,8 +59,8 @@ export async function optionalAuth(req, _res, next) {
           structure_sanitaire: decoded.structure_sanitaire,
         };
       }
-    } catch (e) {
-    
+    } catch {
+      // token invalide ou expiré : on continue sans utilisateur
     }
   }
   next();

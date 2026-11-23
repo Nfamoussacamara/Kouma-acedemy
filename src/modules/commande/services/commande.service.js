@@ -14,29 +14,26 @@ import { CounterService } from "./counter.service.js";
 import { createSearchFilter } from "../../../shared/utils/search.util.js";
 import { STATUT_COMMANDE } from "../commande.constance.js";
 
-const STATUS_MAP = {
-  brouillon: STATUT_COMMANDE.BROUILLON,
-  emise: STATUT_COMMANDE.EMISE,
-  partiellement_recue: STATUT_COMMANDE.PARTIELLEMENT_RECUE,
-  recue: STATUT_COMMANDE.RECUE,
-  annulee: STATUT_COMMANDE.ANNULEE,
-  annulée: STATUT_COMMANDE.ANNULEE,
-};
-
 function normalizeStatus(status) {
   if (!status) {
     throw new ValidationError("Le statut est obligatoire");
   }
-  const key = String(status).toLowerCase().trim();
-  return STATUS_MAP[key] || String(status).toUpperCase();
+  const key = String(status).trim().toLowerCase();
+  const valid = { en_attente: "en_attente", commandee: "commandee", recu: "recu" };
+  if (!valid[key]) {
+    throw new ValidationError(`Statut invalide : ${status}`);
+  }
+  return valid[key];
 }
 
-function computeTotal(equipements) {
+// prixtotal = somme(quantiteRecue * prixUnitaire)
+function computeTotalRecu(equipements) {
   return (equipements || []).reduce(
-    (total, ligne) => total + ligne.quantiteCommandee * ligne.prixUnitaire,
+    (total, ligne) => total + (ligne.quantiteRecue || 0) * (ligne.prixUnitaire || 0),
     0
   );
 }
+
 async function loadCatalogMap(equipements, { strict = false } = {}) {
   const equipementIds = (equipements || [])
     .filter((e) => e.equipement)
@@ -83,6 +80,11 @@ function buildEquipementLine(
   const catalogItem = catalogMap.get(equipementDto.equipement.toString());
   const quantiteRecue = existingLine ? existingLine.quantiteRecue : 0;
 
+  // quantiteDemandee ne change JAMAIS, conservée pour traçabilité
+  const quantiteDemandee = existingLine
+    ? (existingLine.quantiteDemandee ?? existingLine.quantiteCommandee)
+    : (equipementDto.quantiteDemandee ?? equipementDto.quantiteCommandee);
+
   if (
     existingLine &&
     quantiteRecue > 0 &&
@@ -108,16 +110,23 @@ function buildEquipementLine(
     prixUnitaire = catalogItem.prix;
   }
 
+  // quantiteCommandee ou quantiteValidee ajustée par l'Admin
+  const quantiteCommandee =
+    equipementDto.quantiteValidee ??
+    equipementDto.quantiteCommandee ??
+    (existingLine ? existingLine.quantiteCommandee : 1);
+
   return {
     equipement: equipementDto.equipement,
-    quantiteCommandee: equipementDto.quantiteCommandee,
+    quantiteDemandee,
+    quantiteCommandee,
     quantiteRecue,
     prixUnitaire,
   };
 }
 
 export class CommandeService {
-  static listCommandes = async (query = {}) => {
+  static listCommandes = async (query = {}, user = {}) => {
     const { page, limit, skip } = getPagination(query);
     const searchFilter = createSearchFilter(query.search, [
       "reference",
@@ -128,6 +137,16 @@ export class CommandeService {
     ]);
 
     const filter = { ...searchFilter };
+
+    // filtrage par rôle — Utilisateur ne voit que ses propres commandes
+    if (user?.type === "Utilisateur") {
+      filter.demandeur = user.id;
+    }
+
+    // Admin : filtrage explicite optionnel par ?demandeur=<userId>
+    if (user?.type === "Admin" && query.demandeur && isValidObjectId(query.demandeur)) {
+      filter.demandeur = query.demandeur;
+    }
 
     if (query.status) {
       filter.status = normalizeStatus(query.status);
@@ -175,33 +194,39 @@ export class CommandeService {
       }
     }
 
-    const fournisseur = await FournisseurRepository.getFournisseurById(
-      dto.fournisseur
-    );
-    if (!fournisseur) {
-      throw new NotFoundError("Fournisseur introuvable");
+    // fournisseur optionnel à la création (l'Admin l'assignera lors de la validation)
+    let fournisseurId = null;
+    if (dto.fournisseur) {
+      const fournisseur = await FournisseurRepository.getFournisseurById(dto.fournisseur);
+      if (!fournisseur) {
+        throw new NotFoundError("Fournisseur introuvable");
+      }
+      fournisseurId = fournisseur._id;
     }
 
     const catalogMap = await loadCatalogMap(dto.equipements, { strict: true });
 
-    const equipements = dto.equipements.map((equipementDto) =>
-      buildEquipementLine(equipementDto, {
+    // quantiteDemandee = copie immuable de quantiteCommandee à la création
+    const equipements = dto.equipements.map((equipementDto) => ({
+      ...buildEquipementLine(equipementDto, {
         catalogMap,
-        utiliserPrixCatalogue: dto.utiliserPrixCatalogue === true,
-      })
-    );
+        utiliserPrixCatalogue: false,
+      }),
+      quantiteDemandee: equipementDto.quantiteCommandee,
+    }));
 
     const reference = await CounterService.nextCommandeNumber();
-    const targetStatus = dto.status ? normalizeStatus(dto.status) : STATUT_COMMANDE.BROUILLON;
 
+    // statut par défaut = en_attente ; prixtotal = 0 à la création
     return CommandeRepository.createCommande({
       reference,
       panne: panne?._id || null,
-      fournisseur: fournisseur._id,
+      fournisseur: fournisseurId,
       demandeur: userId,
+      createdBy: userId,
       equipements,
-      status: targetStatus,
-      prixtotal: computeTotal(equipements),
+      status: STATUT_COMMANDE.EN_ATTENTE,
+      prixtotal: 0,
     });
   };
 
@@ -215,7 +240,7 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
-    if (commande.status === STATUT_COMMANDE.RECUE || commande.status === STATUT_COMMANDE.ANNULEE) {
+    if (commande.status === STATUT_COMMANDE.RECU) {
       throw new ConflictError(
         `Une commande au statut ${commande.status} ne peut plus être modifiée`
       );
@@ -223,11 +248,14 @@ export class CommandeService {
 
     const fournisseurId =
       dto.fournisseur || commande.fournisseur?._id || commande.fournisseur;
-    const fournisseur = await FournisseurRepository.getFournisseurById(
-      fournisseurId
-    );
-    if (!fournisseur) {
-      throw new NotFoundError(`Fournisseur ${fournisseurId} non trouvé`);
+    let fournisseur = null;
+    if (fournisseurId) {
+      fournisseur = await FournisseurRepository.getFournisseurById(
+        fournisseurId
+      );
+      if (!fournisseur) {
+        throw new NotFoundError(`Fournisseur ${fournisseurId} non trouvé`);
+      }
     }
 
     let equipements = commande.equipements;
@@ -257,11 +285,20 @@ export class CommandeService {
       panneId = dto.panne;
     }
 
+    let targetStatus = commande.status;
+    if (dto.status) {
+      targetStatus = normalizeStatus(dto.status);
+    } else if (commande.status === STATUT_COMMANDE.EN_ATTENTE && fournisseur) {
+      // quand l'admin sélectionne le fournisseur et valide, le statut passe à "commandee"
+      targetStatus = STATUT_COMMANDE.COMMANDEE;
+    }
+
     return CommandeRepository.updateCommande(id, {
       panne: panneId,
-      fournisseur: fournisseur._id,
+      fournisseur: fournisseur?._id || null,
       equipements,
-      prixtotal: computeTotal(equipements),
+      status: targetStatus,
+      prixtotal: computeTotalRecu(equipements),
     });
   };
 
@@ -333,9 +370,15 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
-    if (commande.status === STATUT_COMMANDE.RECUE || commande.status === STATUT_COMMANDE.ANNULEE) {
+    if (commande.status === STATUT_COMMANDE.RECU) {
       throw new ConflictError(
         `Impossible d'enregistrer une réception sur une commande au statut ${commande.status}`
+      );
+    }
+
+    if (commande.status !== STATUT_COMMANDE.COMMANDEE) {
+      throw new ConflictError(
+        `La réception n'est possible que sur une commande au statut "commandee" (statut actuel : ${commande.status})`
       );
     }
 
@@ -350,8 +393,10 @@ export class CommandeService {
       (e) => e.quantiteRecue === e.quantiteCommandee
     );
 
-    commande.status = toutRecu ? STATUT_COMMANDE.RECUE : STATUT_COMMANDE.PARTIELLEMENT_RECUE;
-    commande.prixtotal = computeTotal(commande.equipements);
+    // passage à "recu" si tout est livré, sinon "commandee"
+    commande.status = toutRecu ? STATUT_COMMANDE.RECU : STATUT_COMMANDE.COMMANDEE;
+    // calcul automatique du prixtotal à la réception : somme(quantiteRecue * prixUnitaire)
+    commande.prixtotal = computeTotalRecu(commande.equipements);
 
     commande.receptions.push({
       reference: await CounterService.nextReceptionNumber(),
@@ -377,7 +422,7 @@ export class CommandeService {
 
     const targetStatus = normalizeStatus(status);
 
-    if (targetStatus === STATUT_COMMANDE.ANNULEE) {
+    if (targetStatus === STATUT_COMMANDE.RECU) {
       const aDejaRecu = commande.equipements.some((e) => e.quantiteRecue > 0);
       if (aDejaRecu) {
         throw new ConflictError(
