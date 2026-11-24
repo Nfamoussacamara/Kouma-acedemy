@@ -78,12 +78,6 @@ const updateEquipementLigneSchema = yup
       )
       .nullable()
       .optional(),
-
-    structure_sanitaire: yup
-      .string()
-      .oneOf(STRUCTURE_SANITAIRE, "structure_sanitaire invalide")
-      .required("Le champ structure_sanitaire est requis")
-      .transform((value) => value.toUpperCase()),
   })
 
 export const createPanneSchema = yup.object({

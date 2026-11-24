@@ -169,8 +169,8 @@ export const pannePaths = {
     },
     patch: {
       tags: ['Pannes'],
-      summary: 'Modifier les informations d\'une panne (Admin)',
-      description: 'Remarque : les champs reference, structure_sanitaire et declarant sont immuables et ne peuvent pas être modifiés.',
+      summary: 'Modifier les informations d\'une panne (Admin ou Utilisateur déclarant tant que statut = en_attente)',
+      description: 'Permet de modifier les champs d\'une panne (description, équipements, système, etc.). Seul un Admin peut modifier le statut (via /pannes/{id}/statut). Un Utilisateur déclarant peut modifier sa panne uniquement tant qu\'elle est au statut initial "en_attente" (avant toute prise en charge/modification de statut par un admin). Les champs reference, structure_sanitaire et declarant restent immuables.',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } },

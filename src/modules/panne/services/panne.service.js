@@ -1,4 +1,5 @@
 import {
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from "../../../shared/errors/AppError.js";
@@ -13,6 +14,7 @@ import {
 import { nextPanneReference } from "../services/counter.service.js";
 import { EquipementRepository } from "../../equipement/repositories/equipement.repository.js";
 import { removeUndefinedValues } from "../../../shared/utils/payload.util.js";
+import {UserRepository} from "../../user/repositories/user.repository.js";
 
 export class PanneService {
 
@@ -126,9 +128,14 @@ export class PanneService {
     });
   };
 
-  static updatePanne = async (id, dto) => {
+  static updatePanne = async (userId, id, dto) => {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant panne invalide");
+    }
+
+    const user = await UserRepository.getUserById(userId);
+    if (!user) {
+      throw new NotFoundError("Utilisateur non trouvé");
     }
 
     const panne = await PanneRepository.getPanneById(id);
@@ -136,7 +143,24 @@ export class PanneService {
       throw new NotFoundError(`Panne ${id} non trouvée`);
     }
 
+    if (user.type === "Utilisateur") {
+      const declarantId = panne.declarant?._id
+        ? panne.declarant._id.toString()
+        : panne.declarant?.toString();
+
+      if (declarantId !== user._id.toString()) {
+        throw new ForbiddenError("Vous ne pouvez modifier que les pannes que vous avez déclarées");
+      }
+
+      if (panne.statut !== "en_attente") {
+        throw new ForbiddenError(
+          "Vous ne pouvez plus modifier cette panne car son statut a déjà été pris en charge ou modifié par un administrateur"
+        );
+      }
+    }
+
     const cleanDto = removeUndefinedValues(dto);
+
     if (Object.keys(cleanDto).length === 0) {
       throw new ValidationError("Aucune donnée à mettre à jour");
     }

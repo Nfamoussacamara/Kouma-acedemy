@@ -375,11 +375,15 @@ Vous pouvez déclarer simultanément plusieurs équipements dans une même panne
 ---
 
 ### 3.5 `PATCH /api/v1/pannes/:id` — Modifier une Panne
-Met à jour les informations descriptives d'une panne.
+Met à jour les informations descriptives d'une panne (description, équipements, système, etc.).
 
-* **Authentification :** Requise (Rôle `Admin`)
+* **Authentification :** Requise (Rôles `Admin` ou `Utilisateur`)
+* **Règles métier & permissions :**
+  * **Admin :** Peut modifier les informations à tout moment.
+  * **Utilisateur :** Peut modifier sa propre panne uniquement tant qu'elle est au statut initial **`en_attente`** (avant toute prise en charge ou changement de statut par un administrateur). Dès que le statut évolue vers `en_cours` ou `resolue`, la modification est verrouillée pour l'utilisateur (`403 Forbidden`).
+  * **Statut :** Le statut ne peut jamais être modifié via cette route (utiliser exclusivement `PATCH /api/v1/pannes/:id/statut`).
 * **Méthode :** `PATCH`
-* **Corps de la requête :** Champs à modifier (`description`, `niveau_urgence`, `photos`, etc.).
+* **Corps de la requête :** Champs à modifier (`description`, `niveau_urgence`, `type_panne`, `equipements`, `systeme`, etc.).
 * **Réponse HTTP :** `200 OK`
 
 ---
