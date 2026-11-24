@@ -25,8 +25,7 @@ export class PanneController {
   });
 
   static updatePanne = asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-    const data = await PanneService.updatePanne(userId, req.params.id, req.body);
+    const data = await PanneService.updatePanne(req.user, req.params.id, req.body);
     res.json({ success: true, data });
   });
 

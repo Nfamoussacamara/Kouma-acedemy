@@ -14,7 +14,6 @@ import {
 import { nextPanneReference } from "../services/counter.service.js";
 import { EquipementRepository } from "../../equipement/repositories/equipement.repository.js";
 import { removeUndefinedValues } from "../../../shared/utils/payload.util.js";
-import {UserRepository} from "../../user/repositories/user.repository.js";
 
 export class PanneService {
 
@@ -128,14 +127,9 @@ export class PanneService {
     });
   };
 
-  static updatePanne = async (userId, id, dto) => {
+  static updatePanne = async (user, id, dto) => {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant panne invalide");
-    }
-
-    const user = await UserRepository.getUserById(userId);
-    if (!user) {
-      throw new NotFoundError("Utilisateur non trouvé");
     }
 
     const panne = await PanneRepository.getPanneById(id);
@@ -144,11 +138,9 @@ export class PanneService {
     }
 
     if (user.type === "Utilisateur") {
-      const declarantId = panne.declarant?._id
-        ? panne.declarant._id.toString()
-        : panne.declarant?.toString();
+      const declarantId = panne.declarant?.id ?? panne.declarant?.toString();
 
-      if (declarantId !== user._id.toString()) {
+      if (declarantId !== user.id) {
         throw new ForbiddenError("Vous ne pouvez modifier que les pannes que vous avez déclarées");
       }
 
