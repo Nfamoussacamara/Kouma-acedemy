@@ -121,6 +121,22 @@ export class CommandeRepository {
     return document ? document : null;
   };
 
+  static updateBonReceptionSigne = async (commandeId, bonReceptionData) => {
+    const document = await CommandeModel.findOneAndUpdate(
+      { _id: commandeId, deletedAt: null },
+      { $set: { bonReceptionSigne: bonReceptionData } },
+      { new: true, runValidators: true }
+    )
+      .populate('fournisseur')
+      .populate('demandeur', 'nom prenom username tel type')
+      .populate('panne')
+      .populate('equipements.equipement')
+      .populate('receptions.receptionnePar', 'nom prenom username tel type')
+      .populate('receptions.equipementsRecus.equipement');
+
+    return document ? document : null;
+  };
+
   static getStats = async () => {
     const [
       total,

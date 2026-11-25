@@ -44,6 +44,35 @@ export class DocumentController {
   });
 
   /* ──────────────────────────────────────────────────────────────────────────
+   *  BON DE RÉCEPTION SIGNÉ
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  static uploadBonReceptionSigne = asyncHandler(async (req, res) => {
+    const data = await DocumentService.uploadBonReceptionSigne({
+      commandeId: req.params.id,
+      file: req.file,
+      user: req.user,
+    });
+    res.json({
+      success: true,
+      data,
+      message: 'Bon de réception signé enregistré avec succès',
+    });
+  });
+
+  static deleteBonReceptionSigne = asyncHandler(async (req, res) => {
+    const data = await DocumentService.deleteBonReceptionSigne({
+      commandeId: req.params.id,
+      user: req.user,
+    });
+    res.json({
+      success: true,
+      data,
+      message: 'Bon de réception signé supprimé avec succès',
+    });
+  });
+
+  /* ──────────────────────────────────────────────────────────────────────────
    *  FACTURES DE RÉCEPTION
    * ────────────────────────────────────────────────────────────────────────── */
 

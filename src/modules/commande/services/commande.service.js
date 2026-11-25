@@ -2,6 +2,7 @@ import {
   NotFoundError,
   ValidationError,
   ConflictError,
+  ForbiddenError,
 } from "../../../shared/errors/AppError.js";
 import { isValidObjectId } from "../../../infrastructure/database/mongoose.js";
 import { getPagination } from "../../../shared/utils/pagination.util.js";
@@ -138,14 +139,26 @@ export class CommandeService {
 
     const filter = { ...searchFilter };
 
-    // filtrage par rôle — Utilisateur ne voit que ses propres commandes
+    // filtrage par rôle — Utilisateur voit ses commandes + celles créées par l'admin pour sa structure
     if (user?.type === "Utilisateur") {
-      filter.demandeur = user.id;
+      if (user.structure_sanitaire) {
+        filter.$or = [
+          { demandeur: user.id },
+          { creeParAdmin: true, structure_sanitaire: user.structure_sanitaire },
+        ];
+      } else {
+        filter.demandeur = user.id;
+      }
     }
 
     // Admin : filtrage explicite optionnel par ?demandeur=<userId>
     if (user?.type === "Admin" && query.demandeur && isValidObjectId(query.demandeur)) {
       filter.demandeur = query.demandeur;
+    }
+
+    // Admin : filtrage optionnel par structure sanitaire
+    if (user?.type === "Admin" && query.structure_sanitaire) {
+      filter.structure_sanitaire = query.structure_sanitaire;
     }
 
     if (query.status) {
@@ -168,7 +181,7 @@ export class CommandeService {
     };
   };
 
-  static getCommandeById = async (id) => {
+  static getCommandeById = async (id, user = {}) => {
     if (!isValidObjectId(id)) {
       throw new ValidationError("Identifiant commande invalide");
     }
@@ -178,10 +191,23 @@ export class CommandeService {
       throw new NotFoundError(`Commande ${id} non trouvée`);
     }
 
+    if (user?.type === "Utilisateur") {
+      const isOwner = commande.demandeur?.id === user.id;
+      const isMembreStructure =
+        commande.creeParAdmin &&
+        user.structure_sanitaire &&
+        commande.structure_sanitaire?.includes(user.structure_sanitaire);
+
+      if (!isOwner && !isMembreStructure) {
+        throw new ForbiddenError("Accès refusé à cette commande");
+      }
+    }
+
     return commande;
   };
 
-  static createCommande = async (dto, userId) => {
+  static createCommande = async (dto, user) => {
+    const userId = user.id ?? user._id;
     if (dto.panne && !isValidObjectId(dto.panne)) {
       throw new ValidationError(`Identifiant de panne invalide : ${dto.panne}`);
     }
@@ -227,6 +253,9 @@ export class CommandeService {
       equipements,
       status: STATUT_COMMANDE.EN_ATTENTE,
       prixtotal: 0,
+      // champs spécifiques aux commandes créées par l'admin pour une structure
+      creeParAdmin: user.type === "Admin" ? (dto.creeParAdmin ?? false) : false,
+      structure_sanitaire: user.type === "Admin" ? (dto.structure_sanitaire ?? []) : [],
     });
   };
 

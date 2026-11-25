@@ -9,6 +9,7 @@ import { isValidObjectId } from '../../../infrastructure/database/mongoose.js';
 
 const FOLDER_FACTURES = 'kouma-academy/commandes/factures';
 const FOLDER_BONS_SIGNES = 'kouma-academy/commandes/bons-signes';
+const FOLDER_BONS_RECEPTION_SIGNES = 'kouma-academy/commandes/bons-reception-signes';
 
 export class DocumentService {
   /**
@@ -149,10 +150,97 @@ export class DocumentService {
     return CommandeRepository.updateBonSigne(commandeId, bonSigneData);
   };
 
-  /* ──────────────────────────────────────────────────────────────────────────
-   *  FACTURES DE RÉCEPTION
-   * ────────────────────────────────────────────────────────────────────────── */
 
+  //  BON DE RÉCEPTION SIGNÉ
+
+  static #canAccessBonReception = (commande, user) => {
+    if (user.type === 'Admin') return true;
+    const isOwner = commande.demandeur?.id === user.id;
+    const isMembreStructure =
+      commande.creeParAdmin &&
+      user.structure_sanitaire &&
+      commande.structure_sanitaire?.includes(user.structure_sanitaire);
+    return Boolean(isOwner || isMembreStructure);
+  };
+
+  static uploadBonReceptionSigne = async ({ commandeId, file, user }) => {
+    if (!file) {
+      throw new ValidationError("Aucun fichier fourni (champ 'file' attendu)");
+    }
+
+    if (!isValidObjectId(commandeId)) {
+      throw new ValidationError('Identifiant commande invalide');
+    }
+
+    const commande = await CommandeRepository.getCommandeById(commandeId);
+    if (!commande) {
+      throw new NotFoundError(`Commande ${commandeId} non trouvée`);
+    }
+
+    if (!DocumentService.#canAccessBonReception(commande, user)) {
+      throw new ForbiddenError(
+        "Vous n'êtes pas autorisé à téléverser le bon de réception pour cette commande"
+      );
+    }
+
+    const folder = `${FOLDER_BONS_RECEPTION_SIGNES}/${commande.reference || commande._id}`;
+    const result = await DocumentService.uploadToCloudinary(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+      folder
+    );
+
+    const bonReceptionData = {
+      url: result.secure_url,
+      publicId: result.public_id,
+      nomOriginal: file.originalname,
+      taille: result.bytes,
+      mimeType: file.mimetype,
+      uploadedAt: new Date(),
+      uploadedBy: user.id,
+      deletedAt: null,
+      deletedBy: null,
+    };
+
+    return CommandeRepository.updateBonReceptionSigne(commandeId, bonReceptionData);
+  };
+
+  static deleteBonReceptionSigne = async ({ commandeId, user }) => {
+    if (!isValidObjectId(commandeId)) {
+      throw new ValidationError('Identifiant commande invalide');
+    }
+
+    const commande = await CommandeRepository.getCommandeById(commandeId);
+    if (!commande) {
+      throw new NotFoundError(`Commande ${commandeId} non trouvée`);
+    }
+
+    if (!DocumentService.#canAccessBonReception(commande, user)) {
+      throw new ForbiddenError(
+        "Vous n'êtes pas autorisé à modifier le bon de réception de cette commande"
+      );
+    }
+
+    if (!commande.bonReceptionSigne?.publicId) {
+      throw new ValidationError('Aucun bon de réception signé associé à cette commande');
+    }
+
+    if (commande.bonReceptionSigne.deletedAt) {
+      throw new ValidationError('Ce bon de réception signé est déjà supprimé');
+    }
+
+    const bonReceptionData = {
+      ...commande.bonReceptionSigne.toObject(),
+      deletedAt: new Date(),
+      deletedBy: user.id,
+    };
+
+    return CommandeRepository.updateBonReceptionSigne(commandeId, bonReceptionData);
+  };
+
+   //  FACTURES DE RÉCEPTION
+   
   static #getReceptionOrThrow = (commande, receptionId) => {
     const reception = commande.receptions.id(receptionId);
     if (!reception) {

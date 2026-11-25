@@ -49,6 +49,15 @@ export const createCommandeSchema = yup.object({
   utiliserPrixCatalogue: yup
     .boolean()
     .default(false),
+  structure_sanitaire: yup
+    .array()
+    .of(yup.string().trim())
+    .optional()
+    .default([]),
+  creeParAdmin: yup
+    .boolean()
+    .optional()
+    .default(false),
 });
 
 export const updateCommandeSchema = yup.object({
@@ -102,6 +111,13 @@ export const listCommandeQuerySchema = yup.object({
   search: yup.string().trim(),
   status: yup.string().oneOf(VALID_STATUSES),
   fournisseur: yup.string().trim(),
+  structure_sanitaire: yup.string().trim().optional(),
+  numero: yup.string().trim().optional(),
+  reference: yup.string().trim().optional(),
+});
+
+export const idOrReferenceParamSchema = yup.object({
+  id: yup.string().trim().required("L'identifiant ou le numéro de commande est requis"),
 });
 
 export const toggleStatusSchema = yup.object({
