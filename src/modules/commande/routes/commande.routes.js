@@ -43,7 +43,7 @@ export function createCommandeRoutes() {
   router.get('/:id',
     apiRateLimit,
     auditlogmidleware,
-    requireRole(['Admin']),
+    requireRole(['Admin', 'Utilisateur']),
     validateParams(idParamSchema),
     CommandeController.getCommandeById);
 
@@ -112,6 +112,25 @@ export function createCommandeRoutes() {
     requireRole(["Admin", "Utilisateur"]),
     validateParams(idParamSchema),
     DocumentController.deleteBonSigne
+  );
+
+  router.post(
+    "/:id/bon-reception-signe",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
+    validateParams(idParamSchema),
+    validateFile.single('file'),
+    DocumentController.uploadBonReceptionSigne
+  );
+
+  router.delete(
+    "/:id/bon-reception-signe",
+    apiRateLimit,
+    auditlogmidleware,
+    requireRole(["Admin", "Utilisateur"]),
+    validateParams(idParamSchema),
+    DocumentController.deleteBonReceptionSigne
   );
 
 

@@ -44,7 +44,7 @@ export const commandePaths = {
     get: {
       tags: ['Commandes'],
       summary: 'Lister les commandes avec pagination, recherche et filtres (Admin & Utilisateur)',
-      description: 'Les utilisateurs standards ne voient que leurs propres commandes. Les administrateurs ont une vision globale et peuvent filtrer par demandeur (?demandeur=<id>).',
+      description: 'Les utilisateurs standards voient leurs propres commandes ainsi que celles créées par l\'admin pour leur structure sanitaire. Les administrateurs ont une vision globale et peuvent filtrer par demandeur (?demandeur=<id>) ou par structure (?structure_sanitaire=<nom>).',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
@@ -53,6 +53,7 @@ export const commandePaths = {
         { name: 'status', in: 'query', schema: { type: 'string', enum: ['en_attente', 'commandee', 'recu'] } },
         { name: 'fournisseur', in: 'query', schema: { type: 'string', description: 'Filtrer par ID de fournisseur' } },
         { name: 'demandeur', in: 'query', schema: { type: 'string', description: 'Filtrer par ID de demandeur (Admin uniquement)' } },
+        { name: 'structure_sanitaire', in: 'query', schema: { type: 'string', description: 'Filtrer par structure sanitaire (Admin uniquement)' } },
       ],
       responses: {
         200: { description: 'Liste paginée des commandes' },
@@ -74,6 +75,16 @@ export const commandePaths = {
               properties: {
                 panne: { type: 'string', description: 'ID MongoDB de la panne liée à cette commande (optionnel)', nullable: true },
                 fournisseur: { type: 'string', description: 'ID MongoDB du fournisseur (optionnel, assigné par l\'Admin lors de la validation)', nullable: true },
+                structure_sanitaire: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Structures sanitaires destinataires (pris en compte uniquement si créé par un Admin)'
+                },
+                creeParAdmin: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Indique si la commande est créée par un Admin pour une structure sanitaire'
+                },
                 utiliserPrixCatalogue: { type: 'boolean', default: false, description: 'Optionnel. Si true, pré-remplit le prix unitaire des équipements avec le dernier prix catalogue connu (si > 0).' },
                 equipements: {
                   type: 'array',
@@ -141,7 +152,7 @@ export const commandePaths = {
   '/commandes/{id}': {
     get: {
       tags: ['Commandes'],
-      summary: 'Obtenir les détails d\'une commande',
+      summary: 'Obtenir les détails d\'une commande (Admin & Utilisateur)',
       security: [{ bearerAuth: [] }],
       parameters: [
         { name: 'id', in: 'path', required: true, schema: { type: 'string' } }
@@ -149,6 +160,7 @@ export const commandePaths = {
       responses: {
         200: { description: 'Détails complets avec fournisseur, panne liée, demandeur, équipements et réceptions' },
         401: { description: 'Non authentifié' },
+        403: { description: 'Accès refusé à cette commande' },
         404: { description: 'Commande non trouvée' }
       }
     },
@@ -342,6 +354,58 @@ export const commandePaths = {
         400: { description: 'Aucun bon signé associé ou déjà supprimé' },
         401: { description: 'Non authentifié' },
         403: { description: 'Non autorisé (doit être l\'administrateur ou le demandeur de la commande)' },
+        404: { description: 'Commande introuvable' }
+      }
+    }
+  },
+  '/commandes/{id}/bon-reception-signe': {
+    post: {
+      tags: ['Commandes'],
+      summary: 'Téléverser le bon de réception signé (Admin, demandeur ou structure sanitaire)',
+      description: 'Téléverse le bon de réception signé (PDF ou image, max 10 Mo) vers Cloudinary et l\'associe à la commande. Accessible à l\'administrateur, au demandeur, ou à un utilisateur de la structure sanitaire pour une commande créée par l\'admin.',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la commande' }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'multipart/form-data': {
+            schema: {
+              type: 'object',
+              required: ['file'],
+              properties: {
+                file: {
+                  type: 'string',
+                  format: 'binary',
+                  description: 'Fichier du bon de réception signé (PDF, PNG, JPG, JPEG, WEBP — max 10 Mo)'
+                }
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        200: { description: 'Bon de réception signé enregistré avec succès' },
+        400: { description: 'Aucun fichier fourni ou format non autorisé' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé' },
+        404: { description: 'Commande introuvable' }
+      }
+    },
+    delete: {
+      tags: ['Commandes'],
+      summary: 'Supprimer (soft delete) le bon de réception signé (Admin, demandeur ou structure sanitaire)',
+      description: 'Marque le bon de réception signé comme supprimé (deletedAt / deletedBy).',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'ID de la commande' }
+      ],
+      responses: {
+        200: { description: 'Bon de réception signé supprimé avec succès' },
+        400: { description: 'Aucun bon de réception signé associé ou déjà supprimé' },
+        401: { description: 'Non authentifié' },
+        403: { description: 'Non autorisé' },
         404: { description: 'Commande introuvable' }
       }
     }

@@ -28,6 +28,17 @@ export const commandeSchema = new mongoose.Schema(
       ref: "User",
     },
 
+    // Structures sanitaires destinataires (pour commandes créées par l'Admin)
+    structure_sanitaire: {
+      type: [String],
+      default: [],
+    },
+
+    creeParAdmin: {
+      type: Boolean,
+      default: false,
+    },
+
     equipements: [
       {
         equipement: {
@@ -132,6 +143,30 @@ export const commandeSchema = new mongoose.Schema(
 
     // Bon de commande signé
     bonSigne: {
+      url: { type: String, default: null },
+      publicId: { type: String, default: null },
+      nomOriginal: { type: String, default: null },
+      taille: { type: Number, default: null },
+      mimeType: { type: String, default: null },
+      uploadedAt: { type: Date, default: null },
+      uploadedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+    },
+
+    // Bon de réception signé
+    bonReceptionSigne: {
       url: { type: String, default: null },
       publicId: { type: String, default: null },
       nomOriginal: { type: String, default: null },

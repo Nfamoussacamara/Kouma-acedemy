@@ -13,13 +13,12 @@ export class CommandeController {
   });
 
   static getCommandeById = asyncHandler(async (req, res) => {
-    const data = await CommandeService.getCommandeById(req.params.id);
+    const data = await CommandeService.getCommandeById(req.params.id, req.user);
     res.json({ success: true, data });
   });
 
   static createCommande = asyncHandler(async (req, res) => {
-    const userId = req.user?.id || req.user?._id;
-    const data = await CommandeService.createCommande(req.body, userId);
+    const data = await CommandeService.createCommande(req.body, req.user);
     res.status(201).json({ success: true, data });
   });
 
