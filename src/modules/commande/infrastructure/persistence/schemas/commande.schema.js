@@ -28,10 +28,11 @@ export const commandeSchema = new mongoose.Schema(
       ref: "User",
     },
 
-    // Structures sanitaires destinataires (pour commandes créées par l'Admin)
+    // Structure sanitaire destinataire (pour commandes créées par l'Admin)
     structure_sanitaire: {
-      type: [String],
-      default: [],
+      type: String,
+      default: null,
+      trim: true,
     },
 
     creeParAdmin: {

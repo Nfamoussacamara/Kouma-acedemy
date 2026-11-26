@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import config from '../../src/config/index.js';
 import { createApp } from '../../src/app.js';
 import { UserModel } from '../../src/modules/user/infrastructure/persistence/models/User.model.js';
+import { CommandeModel } from '../../src/modules/commande/infrastructure/persistence/models/Commande.model.js';
 import { DocumentService } from '../../src/modules/commande/services/document.service.js';
 import {
   setupTestDatabase,
@@ -142,7 +143,7 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
     assert.equal(res.status, 201);
     assert.equal(res.body.success, true);
     assert.equal(res.body.data.creeParAdmin, true);
-    assert.deepEqual(res.body.data.structure_sanitaire, ['HOPITAL REGIONAL DE LABE']);
+    assert.equal(res.body.data.structure_sanitaire, 'HOPITAL REGIONAL DE LABE');
   });
 
   it('1.1 Sécurité: un Utilisateur ne peut pas forcer creeParAdmin ou structure_sanitaire à la création', async () => {
@@ -157,7 +158,7 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
 
     assert.equal(res.status, 201);
     assert.equal(res.body.data.creeParAdmin, false);
-    assert.deepEqual(res.body.data.structure_sanitaire, []);
+    assert.equal(res.body.data.structure_sanitaire, null);
     assert.equal(res.body.data.demandeur._id, labeUserId);
   });
 
@@ -171,7 +172,7 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
         equipements: [{ equipement: equipementId, quantiteCommandee: 2 }],
       });
 
-    // Commande Admin pour Mamou
+    // Commande Admin pour Boke
     const cmdMamou = await app
       .post('/api/v1/commandes')
       .set(adminHeaders)
