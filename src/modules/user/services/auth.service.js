@@ -50,6 +50,7 @@ export class AuthService {
         prenom: user.prenom,
         tel: user.tel,
         type: user.type,
+        structure_sanitaire: user.structure_sanitaire,
       },
     };
   };
