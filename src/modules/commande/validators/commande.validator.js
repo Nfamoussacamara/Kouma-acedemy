@@ -50,10 +50,14 @@ export const createCommandeSchema = yup.object({
     .boolean()
     .default(false),
   structure_sanitaire: yup
-    .array()
-    .of(yup.string().trim())
-    .optional()
-    .default([]),
+    .mixed()
+    .transform((val) => (Array.isArray(val) ? val[0] : val))
+    .test("is-string", "La structure sanitaire doit être une chaîne", (val) => {
+      return val === undefined || val === null || typeof val === "string";
+    })
+    .transform((val) => (typeof val === "string" ? val.trim() : val))
+    .nullable()
+    .optional(),
 });
 
 export const updateCommandeSchema = yup.object({

@@ -142,17 +142,12 @@ export class CommandeService {
     // filtrage par rôle — Utilisateur voit ses commandes + celles créées par l'admin pour sa structure
     if (user?.type === "Utilisateur") {
       if (user.structure_sanitaire) {
-        filter.$and = [
-          ...(filter.$and || []),
+        filter.$or = [
+          { demandeur: user.id },
           {
-            $or: [
-              { demandeur: user.id },
-              {
-                creeParAdmin: true,
-                structure_sanitaire: user.structure_sanitaire,
-                "receptions.0": { $exists: true },
-              },
-            ],
+            creeParAdmin: true,
+            structure_sanitaire: user.structure_sanitaire,
+            "receptions.0": { $exists: true },
           },
         ];
       } else {
@@ -205,7 +200,7 @@ export class CommandeService {
       const isMembreStructure =
         commande.creeParAdmin &&
         user.structure_sanitaire &&
-        commande.structure_sanitaire?.includes(user.structure_sanitaire) &&
+        commande.structure_sanitaire === user.structure_sanitaire &&
         commande.receptions?.length > 0;
 
       if (!isOwner && !isMembreStructure) {
@@ -252,8 +247,10 @@ export class CommandeService {
     }));
 
     const reference = await CounterService.nextCommandeNumber();
-    const structuresSanitaires =
-      user.type === "Admin" ? (dto.structure_sanitaire ?? []) : [];
+    const structureSanitaire =
+      user.type === "Admin" && dto.structure_sanitaire
+        ? (Array.isArray(dto.structure_sanitaire) ? dto.structure_sanitaire[0] : dto.structure_sanitaire)
+        : null;
 
     // statut par défaut = en_attente ; prixtotal = 0 à la création
     return CommandeRepository.createCommande({
@@ -265,8 +262,8 @@ export class CommandeService {
       equipements,
       status: STATUT_COMMANDE.EN_ATTENTE,
       prixtotal: 0,
-      creeParAdmin: structuresSanitaires.length > 0,
-      structure_sanitaire: structuresSanitaires,
+      creeParAdmin: Boolean(structureSanitaire),
+      structure_sanitaire: structureSanitaire || null,
     });
   };
 
