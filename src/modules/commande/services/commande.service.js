@@ -242,6 +242,8 @@ export class CommandeService {
     }));
 
     const reference = await CounterService.nextCommandeNumber();
+    const structuresSanitaires =
+      user.type === "Admin" ? (dto.structure_sanitaire ?? []) : [];
 
     // statut par défaut = en_attente ; prixtotal = 0 à la création
     return CommandeRepository.createCommande({
@@ -253,9 +255,8 @@ export class CommandeService {
       equipements,
       status: STATUT_COMMANDE.EN_ATTENTE,
       prixtotal: 0,
-      // champs spécifiques aux commandes créées par l'admin pour une structure
-      creeParAdmin: user.type === "Admin" ? (dto.creeParAdmin ?? false) : false,
-      structure_sanitaire: user.type === "Admin" ? (dto.structure_sanitaire ?? []) : [],
+      creeParAdmin: structuresSanitaires.length > 0,
+      structure_sanitaire: structuresSanitaires,
     });
   };
 
