@@ -142,9 +142,18 @@ export class CommandeService {
     // filtrage par rôle — Utilisateur voit ses commandes + celles créées par l'admin pour sa structure
     if (user?.type === "Utilisateur") {
       if (user.structure_sanitaire) {
-        filter.$or = [
-          { demandeur: user.id },
-          { creeParAdmin: true, structure_sanitaire: user.structure_sanitaire },
+        filter.$and = [
+          ...(filter.$and || []),
+          {
+            $or: [
+              { demandeur: user.id },
+              {
+                creeParAdmin: true,
+                structure_sanitaire: user.structure_sanitaire,
+                "receptions.0": { $exists: true },
+              },
+            ],
+          },
         ];
       } else {
         filter.demandeur = user.id;
@@ -196,7 +205,8 @@ export class CommandeService {
       const isMembreStructure =
         commande.creeParAdmin &&
         user.structure_sanitaire &&
-        commande.structure_sanitaire?.includes(user.structure_sanitaire);
+        commande.structure_sanitaire?.includes(user.structure_sanitaire) &&
+        commande.receptions?.length > 0;
 
       if (!isOwner && !isMembreStructure) {
         throw new ForbiddenError("Accès refusé à cette commande");

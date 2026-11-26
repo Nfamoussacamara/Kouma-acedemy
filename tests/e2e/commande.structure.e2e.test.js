@@ -36,6 +36,24 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
     return { Authorization: `Bearer ${token}` };
   };
 
+  const registerReception = async (commandeId) => {
+    const statusRes = await app
+      .patch(`/api/v1/commandes/${commandeId}/status`)
+      .set(adminHeaders)
+      .send({ status: 'commandee' });
+    assert.equal(statusRes.status, 200);
+
+    const receptionRes = await app
+      .post(`/api/v1/commandes/${commandeId}/receptions`)
+      .set(adminHeaders)
+      .send({
+        equipementsRecus: [
+          { equipement: equipementId, quantiteRecue: 1, prixUnitaire: 500000 },
+        ],
+      });
+    assert.equal(receptionRes.status, 200);
+  };
+
   before(async () => {
     await setupTestDatabase();
     app = request(createApp());
@@ -162,6 +180,15 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
         equipements: [{ equipement: equipementId, quantiteCommandee: 3 }],
       });
 
+    const listBeforeReception = await app.get('/api/v1/commandes').set(labeHeaders);
+    assert.equal(listBeforeReception.status, 200);
+    assert.ok(
+      !listBeforeReception.body.data.some((c) => c._id === cmdLabe.body.data._id)
+    );
+
+    await registerReception(cmdLabe.body.data._id);
+    await registerReception(cmdMamou.body.data._id);
+
     // Commande personnelle de l'utilisateur de Labé
     const cmdPersoLabe = await app
       .post('/api/v1/commandes')
@@ -208,6 +235,7 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
         equipements: [{ equipement: equipementId, quantiteCommandee: 1 }],
       });
     const ref = cmd.body.data.reference;
+    await registerReception(cmd.body.data._id);
 
     const searchRes = await app
       .get(`/api/v1/commandes?search=${encodeURIComponent(ref)}`)
@@ -228,6 +256,14 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
         equipements: [{ equipement: equipementId, quantiteCommandee: 2 }],
       });
     const cmdId = cmdLabe.body.data._id;
+
+    // La structure n'accède pas au détail avant la première réception.
+    const getBeforeReception = await app
+      .get(`/api/v1/commandes/${cmdId}`)
+      .set(labeHeaders);
+    assert.equal(getBeforeReception.status, 403);
+
+    await registerReception(cmdId);
 
     // Membre de Labé -> 200
     const getLabe = await app.get(`/api/v1/commandes/${cmdId}`).set(labeHeaders);
@@ -279,6 +315,18 @@ describe('Commandes - Structure sanitaire, RBAC & Bon de réception signé (E2E)
         contentType: 'application/pdf',
       });
     assert.equal(forbiddenUpload.status, 403);
+
+    // Même la structure destinataire ne peut pas téléverser avant réception.
+    const uploadBeforeReception = await app
+      .post(`/api/v1/commandes/${cmdId}/bon-reception-signe`)
+      .set(labeHeaders)
+      .attach('file', Buffer.from('%PDF-1.4 test'), {
+        filename: 'bon-reception.pdf',
+        contentType: 'application/pdf',
+      });
+    assert.equal(uploadBeforeReception.status, 403);
+
+    await registerReception(cmdId);
 
     // Membre de Labé -> 200 upload
     const uploadRes = await app

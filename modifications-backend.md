@@ -46,7 +46,7 @@ Il doit **aussi** recevoir les commandes dont `structure_sanitaire` contient **s
 
 - Le frontend appelle `GET /commandes?structure_sanitaire=<nom>&limit=100`.
 - **Important (sécurité)** : la structure doit être lue dans l'utilisateur connecté (token, `user.structure_sanitaire`), **pas** dans le paramètre de l'URL. Sinon un utilisateur peut lire les commandes d'une autre structure.
-- Recommandé : ne renvoyer ces commandes qu'une fois réceptionnées (au moins une réception). Le frontend applique déjà ce filtre, mais il est plus sûr côté serveur.
+- Ne renvoyer ces commandes à la structure qu'une fois qu'au moins une réception est liée. Appliquer la même règle à `GET /commandes/:id` et aux actions du bon de réception signé.
 
 **1.3 Droits d'accès**
 

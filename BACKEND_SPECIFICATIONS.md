@@ -62,9 +62,10 @@ Ce document récapitule l'ensemble des ajustements à apporter à l'API Backend 
 
 ### Règle d'accès
 - **Utilisateur simple (non-admin)** :
-  - La liste retournée contient ses propres commandes et celles créées par un Admin pour sa structure sanitaire.
+  - La liste retournée contient ses propres commandes et celles créées par un Admin pour sa structure sanitaire, à condition qu'au moins une réception soit liée à la commande.
   - Le backend détermine `creeParAdmin` à la création lorsqu'un Admin fournit au moins une structure destinataire. Ce champ ne doit pas être piloté par le client.
   - Pour les commandes d'Admin, la structure autorisée vient du token de l'utilisateur, pas d'un paramètre de requête.
+  - La même condition de réception s'applique à l'accès au détail et au bon de réception signé des commandes créées par un Admin.
   - Les commandes personnelles restent restreintes au demandeur :
     ```javascript
     // Pour une commande personnelle :

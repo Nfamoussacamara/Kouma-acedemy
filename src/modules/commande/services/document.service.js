@@ -159,7 +159,8 @@ export class DocumentService {
     const isMembreStructure =
       commande.creeParAdmin &&
       user.structure_sanitaire &&
-      commande.structure_sanitaire?.includes(user.structure_sanitaire);
+      commande.structure_sanitaire?.includes(user.structure_sanitaire) &&
+      commande.receptions?.length > 0;
     return Boolean(isOwner || isMembreStructure);
   };
 
