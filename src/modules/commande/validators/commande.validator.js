@@ -54,10 +54,6 @@ export const createCommandeSchema = yup.object({
     .of(yup.string().trim())
     .optional()
     .default([]),
-  creeParAdmin: yup
-    .boolean()
-    .optional()
-    .default(false),
 });
 
 export const updateCommandeSchema = yup.object({
